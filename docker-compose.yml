@@ -29,16 +29,43 @@ services:
       retries: 5
 
   minio-init:
-    image: minio/mc:latest
+    image: cgr.dev/chainguard/minio-client:latest
     depends_on:
       minio:
         condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-agencyadmin} ${MINIO_ROOT_PASSWORD:-change-this-minio-password};
-      mc mb --ignore-existing local/agency-media;
-      mc anonymous set download local/agency-media;
-      "
+    user: "0:0"
+    entrypoint: ["/usr/bin/mc"]
+    command: ["alias", "set", "local", "http://minio:9000", "${MINIO_ROOT_USER:-agencyadmin}", "${MINIO_ROOT_PASSWORD:-change-this-minio-password}"]
+    environment:
+      MC_CONFIG_DIR: /mc-config
+    volumes:
+      - minio_mc_config:/mc-config
+
+  minio-init-bucket:
+    image: cgr.dev/chainguard/minio-client:latest
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    user: "0:0"
+    entrypoint: ["/usr/bin/mc"]
+    command: ["mb", "--ignore-existing", "local/agency-media"]
+    environment:
+      MC_CONFIG_DIR: /mc-config
+    volumes:
+      - minio_mc_config:/mc-config
+
+  minio-init-public:
+    image: cgr.dev/chainguard/minio-client:latest
+    depends_on:
+      minio-init-bucket:
+        condition: service_completed_successfully
+    user: "0:0"
+    entrypoint: ["/usr/bin/mc"]
+    command: ["anonymous", "set", "download", "local/agency-media"]
+    environment:
+      MC_CONFIG_DIR: /mc-config
+    volumes:
+      - minio_mc_config:/mc-config
 
   cms:
     build:
@@ -47,7 +74,7 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
-      minio-init:
+      minio-init-public:
         condition: service_completed_successfully
     environment:
       NODE_ENV: production
@@ -130,3 +157,4 @@ volumes:
   mongo_data:
   media_data:
   crm_data:
+  minio_mc_config:

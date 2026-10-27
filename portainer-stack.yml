@@ -26,10 +26,15 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.digitalspot_site.rule=Host(`digitalspot.gr`) || Host(`www.digitalspot.gr`)"
+      - "traefik.http.routers.digitalspot_site.rule=Host(`www.digitalspot.gr`)"
       - "traefik.http.routers.digitalspot_site.entrypoints=websecure"
       - "traefik.http.routers.digitalspot_site.tls.certresolver=le"
-      - "traefik.http.routers.digitalspot_site.middlewares=digitalspot-www-redirect"
+      - "traefik.http.routers.digitalspot_site.service=digitalspot_site"
+      - "traefik.http.routers.digitalspot_apex.rule=Host(`digitalspot.gr`)"
+      - "traefik.http.routers.digitalspot_apex.entrypoints=websecure"
+      - "traefik.http.routers.digitalspot_apex.tls.certresolver=le"
+      - "traefik.http.routers.digitalspot_apex.middlewares=digitalspot-www-redirect"
+      - "traefik.http.routers.digitalspot_apex.service=digitalspot_site"
       - "traefik.http.middlewares.digitalspot-www-redirect.redirectregex.regex=^https?://digitalspot\\.gr/(.*)"
       - "traefik.http.middlewares.digitalspot-www-redirect.redirectregex.replacement=https://www.digitalspot.gr/$${1}"
       - "traefik.http.middlewares.digitalspot-www-redirect.redirectregex.permanent=true"
@@ -44,7 +49,7 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
-      minio-init:
+      minio-init-public:
         condition: service_completed_successfully
     environment:
       NODE_ENV: production
@@ -159,18 +164,47 @@ services:
       - app_internal
 
   minio-init:
-    image: minio/mc:latest
+    image: cgr.dev/chainguard/minio-client:latest
     depends_on:
       minio:
         condition: service_healthy
-    entrypoint: ["/bin/sh", "-ec"]
-    command: |
-      mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
-      mc mb --ignore-existing local/agency-media
-      mc anonymous set download local/agency-media
+    user: "0:0"
+    entrypoint: ["/usr/bin/mc"]
+    command: ["alias", "set", "local", "http://minio:9000", "${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}", "${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}"]
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+      MC_CONFIG_DIR: /mc-config
+    volumes:
+      - minio_mc_config:/mc-config
+    networks:
+      - app_internal
+
+  minio-init-bucket:
+    image: cgr.dev/chainguard/minio-client:latest
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    user: "0:0"
+    entrypoint: ["/usr/bin/mc"]
+    command: ["mb", "--ignore-existing", "local/agency-media"]
+    environment:
+      MC_CONFIG_DIR: /mc-config
+    volumes:
+      - minio_mc_config:/mc-config
+    networks:
+      - app_internal
+
+  minio-init-public:
+    image: cgr.dev/chainguard/minio-client:latest
+    depends_on:
+      minio-init-bucket:
+        condition: service_completed_successfully
+    user: "0:0"
+    entrypoint: ["/usr/bin/mc"]
+    command: ["anonymous", "set", "download", "local/agency-media"]
+    environment:
+      MC_CONFIG_DIR: /mc-config
+    volumes:
+      - minio_mc_config:/mc-config
     networks:
       - app_internal
 
@@ -184,3 +218,4 @@ volumes:
   mongo_data:
   media_data:
   crm_data:
+  minio_mc_config:
