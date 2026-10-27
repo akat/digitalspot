@@ -1,0 +1,95 @@
+services:
+  mongo:
+    image: mongo:8
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-agencyadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-change-this-minio-password}
+    volumes:
+      - media_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-agencyadmin} ${MINIO_ROOT_PASSWORD:-change-this-minio-password};
+      mc mb --ignore-existing local/agency-media;
+      mc anonymous set download local/agency-media;
+      "
+
+  cms:
+    build:
+      context: ./cms
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      PORT: 3055
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:-replace-this-with-a-long-random-secret}
+      PAYLOAD_PUBLIC_SERVER_URL: ${NUXT_PUBLIC_PAYLOAD_URL:-http://localhost:3055}
+      DATABASE_URI: mongodb://mongo:27017/digitalspot
+      PAYLOAD_ADMIN_EMAIL: ${PAYLOAD_ADMIN_EMAIL:-admin@stigma.studio}
+      PAYLOAD_ADMIN_PASSWORD: ${PAYLOAD_ADMIN_PASSWORD:-change-this-password}
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-agencyadmin}
+      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-change-this-minio-password}
+      S3_BUCKET: agency-media
+      S3_REGION: us-east-1
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_BASE_URL: ${S3_PUBLIC_BASE_URL:-http://localhost:9000/agency-media}
+    ports:
+      - "3055:3055"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3055/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    depends_on:
+      cms:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      NITRO_HOST: 0.0.0.0
+      NITRO_PORT: 3000
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      NUXT_PUBLIC_PAYLOAD_URL: ${NUXT_PUBLIC_PAYLOAD_URL:-http://localhost:3055}
+      NUXT_PAYLOAD_URL: http://cms:3055
+    ports:
+      - "3000:3000"
+
+volumes:
+  mongo_data:
+  media_data:
