@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AgencyBlock, AgencyProject } from '~/types/content'
+import type { AgencyBlock, AgencyImage, AgencyProject } from '~/types/content'
 
 defineProps<{
   slice: AgencyBlock
@@ -8,7 +8,7 @@ defineProps<{
 const config = useRuntimeConfig()
 const externalLink = (url?: string | null) => Boolean(url && /^https?:\/\//i.test(url))
 
-const imageUrl = (image: AgencyProject['image']) => {
+const imageUrl = (image: AgencyImage | string | null | undefined) => {
   if (!image) return ''
   const rawUrl = typeof image === 'string'
     ? image
@@ -23,7 +23,7 @@ const imageUrl = (image: AgencyProject['image']) => {
   }
 }
 
-const imageAlt = (image: NonNullable<AgencyBlock['projects']>[number]['image'], fallback: string) =>
+const imageAlt = (image: AgencyImage | string | null | undefined, fallback: string) =>
   typeof image === 'object' && image && image.alt ? image.alt : fallback
 
 const faqOpen = ref<number | null>(0)
@@ -114,8 +114,8 @@ const faqOpen = ref<number | null>(0)
       </div>
       <NuxtLink to="/#contact" class="hidden shrink-0 text-sm font-semibold text-slate-800 hover:text-leaf sm:inline-flex">Έχεις ένα project; ↗</NuxtLink>
     </div>
-    <div class="mt-12 grid gap-7 md:grid-cols-2">
-      <article v-for="(project, index) in slice.projects || []" :key="project.id ?? index" class="project-card" :class="{ 'md:mt-12': index % 2 === 1 }">
+    <div class="mt-12 grid grid-cols-1 items-start gap-7 md:grid-cols-2">
+      <article v-for="(project, index) in slice.projects || []" :key="project.id ?? index" class="project-card min-w-0">
         <NuxtLink :to="project.url || '#contact'" :external="externalLink(project.url)" :target="externalLink(project.url) ? '_blank' : undefined" :rel="externalLink(project.url) ? 'noopener noreferrer' : undefined" class="group block">
           <div class="project-image" :class="`project-image-${index % 4}`">
             <img v-if="imageUrl(project.image)" :src="imageUrl(project.image)" :alt="imageAlt(project.image, project.name || '')" loading="lazy" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
@@ -178,7 +178,7 @@ const faqOpen = ref<number | null>(0)
   </section>
 
   <section v-else-if="slice.blockType === 'contactSlice'" id="contact" class="agency-section agency-shell">
-    <div class="grid gap-12 lg:grid-cols-[1fr_.8fr] lg:items-end">
+    <div class="grid gap-12 lg:grid-cols-[1fr_.8fr]">
       <div>
         <p v-if="slice.eyebrow" class="eyebrow">{{ slice.eyebrow }}</p>
         <h2 class="section-title max-w-2xl">{{ slice.heading }}</h2>
@@ -189,6 +189,133 @@ const faqOpen = ref<number | null>(0)
         <a v-if="slice.phone" :href="`tel:${slice.phone.replace(/\\s/g, '')}`" class="contact-link"><span>Τηλέφωνο</span><strong>{{ slice.phone }}</strong></a>
         <p v-if="slice.location" class="contact-link sm:col-span-2"><span>Τοποθεσία</span><strong>{{ slice.location }}</strong></p>
       </div>
+      <iframe
+        v-if="slice.showMap && slice.mapUrl"
+        :src="slice.mapUrl"
+        title="Χάρτης τοποθεσίας"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        class="contact-map lg:col-span-2"
+      />
     </div>
   </section>
+
+  <section v-else-if="slice.blockType === 'featuresSlice'" class="agency-section agency-shell">
+    <div class="section-heading">
+      <p v-if="slice.eyebrow" class="eyebrow">{{ slice.eyebrow }}</p>
+      <h2 class="section-title">{{ slice.heading }}</h2>
+      <p v-if="slice.description" class="section-lead">{{ slice.description }}</p>
+    </div>
+    <div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <article v-for="(feature, index) in slice.features || []" :key="feature.id ?? index" class="feature-card">
+        <span class="feature-symbol" aria-hidden="true">{{ feature.icon || `0${index + 1}` }}</span>
+        <h3 class="mt-7 text-lg font-semibold">{{ feature.title }}</h3>
+        <p class="mt-2 text-sm leading-6 text-slate-600">{{ feature.description }}</p>
+      </article>
+    </div>
+  </section>
+
+  <section v-else-if="slice.blockType === 'projectStackSlice'" class="agency-section agency-shell">
+    <div class="section-heading">
+      <p v-if="slice.eyebrow" class="eyebrow">{{ slice.eyebrow }}</p>
+      <h2 class="section-title">{{ slice.heading }}</h2>
+      <p v-if="slice.description" class="section-lead">{{ slice.description }}</p>
+    </div>
+    <ol class="project-layers mt-10">
+      <li v-for="(layer, index) in slice.layers || []" :key="layer.id ?? index" class="project-layer">
+        <span class="project-layer-number">0{{ index + 1 }}</span>
+        <h3>{{ layer.title }}</h3>
+        <ul>
+          <li v-for="(item, itemIndex) in layer.items || []" :key="item.id ?? itemIndex">{{ item.label }}</li>
+        </ul>
+      </li>
+    </ol>
+  </section>
+
+  <section
+    v-else-if="slice.blockType === 'imageTextSlice'"
+    class="agency-section agency-shell"
+  >
+    <div class="image-text-grid" :class="{ 'image-text-reverse': slice.imagePosition === 'left' }">
+      <div class="image-text-copy">
+        <p v-if="slice.eyebrow" class="eyebrow">{{ slice.eyebrow }}</p>
+        <h2 class="section-title">{{ slice.heading }}</h2>
+        <p class="section-lead">{{ slice.description }}</p>
+        <NuxtLink v-if="slice.buttonLabel && slice.buttonUrl" :to="slice.buttonUrl" class="primary-button mt-7">
+          {{ slice.buttonLabel }} <span aria-hidden="true">↗</span>
+        </NuxtLink>
+      </div>
+      <div class="image-text-visual">
+        <img v-if="imageUrl(slice.image)" :src="imageUrl(slice.image)" :alt="imageAlt(slice.image, slice.imageAlt || '')" loading="lazy">
+        <div v-else class="image-text-placeholder" aria-hidden="true"><span>DS</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section v-else-if="slice.blockType === 'testimonialSlice'" class="testimonial-section">
+    <div class="agency-shell py-16 sm:py-20">
+      <p v-if="slice.eyebrow" class="eyebrow">{{ slice.eyebrow }}</p>
+      <figure class="mt-6 max-w-4xl">
+        <blockquote class="testimonial-quote">«{{ slice.quote }}»</blockquote>
+        <figcaption class="mt-8 text-sm text-slate-600">
+          <strong class="text-slate-900">{{ slice.person }}</strong>
+          <span v-if="slice.role || slice.company"> · {{ [slice.role, slice.company].filter(Boolean).join(', ') }}</span>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section v-else-if="slice.blockType === 'logoCloudSlice'" class="agency-section agency-shell">
+    <h2 v-if="slice.heading" class="text-center text-sm font-semibold uppercase tracking-[.16em] text-slate-500">{{ slice.heading }}</h2>
+    <ul class="mt-8 grid grid-cols-2 items-center gap-5 sm:grid-cols-3 lg:grid-cols-5">
+      <li v-for="(logo, index) in slice.logos || []" :key="logo.id ?? index" class="logo-cloud-item">
+        <img v-if="imageUrl(logo.image)" :src="imageUrl(logo.image)" :alt="logo.name || 'Λογότυπο συνεργάτη'" loading="lazy">
+        <span v-else>{{ logo.name }}</span>
+      </li>
+    </ul>
+  </section>
+
+  <article v-else-if="slice.blockType === 'projectDetailsSlice'" class="project-detail">
+    <header class="agency-shell project-detail-header">
+      <p v-if="slice.eyebrow" class="eyebrow">{{ slice.eyebrow }}</p>
+      <h1 class="project-detail-title">{{ slice.heading }}</h1>
+      <p class="project-detail-lead">{{ slice.description }}</p>
+      <dl class="project-meta">
+        <div v-if="slice.client"><dt>Πελάτης</dt><dd>{{ slice.client }}</dd></div>
+        <div v-if="slice.year"><dt>Έτος</dt><dd>{{ slice.year }}</dd></div>
+        <div v-if="slice.services"><dt>Υπηρεσίες</dt><dd>{{ slice.services }}</dd></div>
+      </dl>
+      <img v-if="imageUrl(slice.image)" :src="imageUrl(slice.image)" :alt="imageAlt(slice.image, slice.heading || '')" loading="eager" class="project-detail-hero">
+      <div v-else class="project-detail-placeholder"><span>{{ slice.heading?.slice(0, 1) }}</span></div>
+    </header>
+    <div v-if="slice.challenge || slice.solution" class="agency-shell project-story">
+      <section v-if="slice.challenge">
+        <p class="eyebrow">Η πρόκληση</p>
+        <p class="mt-4 text-lg leading-8 text-slate-700">{{ slice.challenge }}</p>
+      </section>
+      <section v-if="slice.solution">
+        <p class="eyebrow">Η λύση</p>
+        <p class="mt-4 text-lg leading-8 text-slate-700">{{ slice.solution }}</p>
+      </section>
+    </div>
+    <div v-if="slice.results?.length" class="stats-section">
+      <div class="agency-shell grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div v-for="(result, index) in slice.results" :key="result.id ?? index" class="border-l border-white/20 pl-5">
+          <p class="text-3xl font-semibold text-white">{{ result.value }}</p>
+          <p class="mt-1 text-sm text-white/65">{{ result.label }}</p>
+        </div>
+      </div>
+    </div>
+    <div v-if="slice.gallery?.length" class="agency-shell project-gallery">
+      <figure v-for="(item, index) in slice.gallery" :key="item.id ?? index">
+        <img v-if="imageUrl(item.image)" :src="imageUrl(item.image)" :alt="imageAlt(item.image, item.caption || '')" loading="lazy">
+        <figcaption v-if="item.caption">{{ item.caption }}</figcaption>
+      </figure>
+    </div>
+    <div v-if="slice.buttonLabel && slice.buttonUrl" class="agency-shell py-12">
+      <NuxtLink :to="slice.buttonUrl" :external="externalLink(slice.buttonUrl)" class="primary-button">
+        {{ slice.buttonLabel }} <span aria-hidden="true">↗</span>
+      </NuxtLink>
+    </div>
+  </article>
 </template>

@@ -7,6 +7,38 @@ dotenv.config()
 
 const payload = require('payload') as Payload
 
+type MenuLink = {
+  label: string
+  url: string
+  openInNewTab?: boolean
+  children?: MenuLink[]
+}
+
+type MainNavigationSettings = {
+  mainNavigation?: MenuLink[]
+  headerCta?: { label?: string; url?: string }
+}
+
+type FooterSettings = {
+  footerDescription?: string
+  footerColumns?: Array<{ title: string; links?: MenuLink[] }>
+  footerSocialLinks?: MenuLink[]
+  footerContact?: { email?: string; phone?: string; location?: string }
+  copyright?: string
+}
+
+const projectStackExample = {
+  blockType: 'projectStackSlice',
+  eyebrow: 'Η λύση, σε επίπεδα',
+  heading: 'Χτίζουμε σε σταθερές βάσεις.',
+  description: 'Κάθε έργο ξεκινά από τα απαραίτητα και μπορεί να εξελιχθεί με λειτουργίες που εξυπηρετούν την ομάδα σου.',
+  layers: [
+    { title: 'Σχεδιασμός και περιεχόμενο', items: [{ label: 'Ταυτότητα' }, { label: 'Ιστοσελίδες' }, { label: 'Προσβασιμότητα' }] },
+    { title: 'Λειτουργίες', items: [{ label: 'Φόρμες' }, { label: 'Κρατήσεις' }, { label: 'Αναφορές' }] },
+    { title: 'Σύνδεση και αυτοματοποίηση', items: [{ label: 'Εργαλεία ομάδας' }, { label: 'Ψηφιακοί βοηθοί' }] },
+  ],
+}
+
 const seed = async () => {
   await payload.init({
     config: payloadConfig,
@@ -137,56 +169,70 @@ const seed = async () => {
     })
   }
 
-  const siteSettings = await payload.findGlobal({
-    slug: 'site-settings',
-    depth: 0,
-  })
-
-  const hasNavigation = Array.isArray(siteSettings.mainNavigation) && siteSettings.mainNavigation.length > 0
-  const hasFooterColumns = Array.isArray(siteSettings.footerColumns) && siteSettings.footerColumns.length > 0
-  const navigationItems = Array.isArray(siteSettings.mainNavigation) ? siteSettings.mainNavigation : []
+  const mainNavigation = await payload.findGlobal({ slug: 'main-navigation', depth: 0 }) as MainNavigationSettings
+  const navigationItems = mainNavigation.mainNavigation || []
   const servicesMenuItem = navigationItems.find(
-    (item: { label?: string; children?: unknown }) => item.label?.trim().toLocaleLowerCase('el') === 'υπηρεσίες',
+    item => item.label.trim().toLocaleLowerCase('el') === 'υπηρεσίες',
   )
 
-  if (servicesMenuItem && (!Array.isArray(servicesMenuItem.children) || !servicesMenuItem.children.length)) {
+  if (!navigationItems.length) {
     await payload.updateGlobal({
-      slug: 'site-settings',
-      data: {
-        mainNavigation: navigationItems.map(        (item: { label?: string; children?: unknown; [key: string]: unknown }) =>
-          item === servicesMenuItem
-            ? {
-                ...item,
-                children: [
-                  { label: 'Εφαρμογές για κινητά', url: '/#services' },
-                  { label: 'Ιστοσελίδες', url: '/#services' },
-                  { label: 'Ηλεκτρονικά καταστήματα', url: '/#services' },
-                  { label: 'Εξατομικευμένες πλατφόρμες', url: '/#services' },
-                ],
-              }
-            : item,
-        ),
-      },
-    })
-  }
-
-  if (siteSettings.copyright === 'Στίγμα Studio. Με φροντίδα, στην Ελλάδα.') {
-    await payload.updateGlobal({
-      slug: 'site-settings',
-      data: { copyright: 'Digital Spot. Με φροντίδα, στην Ελλάδα.' },
-    })
-  }
-
-  if (!hasNavigation && !hasFooterColumns) {
-    await payload.updateGlobal({
-      slug: 'site-settings',
+      slug: 'main-navigation',
       data: {
         mainNavigation: [
-          { label: 'Υπηρεσίες', url: '/#services' },
+          {
+            label: 'Υπηρεσίες',
+            url: '/#services',
+            children: [
+              { label: 'Εφαρμογές για κινητά', url: '/#services' },
+              { label: 'Ιστοσελίδες', url: '/#services' },
+              { label: 'Ηλεκτρονικά καταστήματα', url: '/#services' },
+              { label: 'Εξατομικευμένες πλατφόρμες', url: '/#services' },
+            ],
+          },
           { label: 'Έργα', url: '/#work' },
           { label: 'Η διαδικασία', url: '/#process' },
         ],
         headerCta: { label: 'Ας μιλήσουμε', url: '/#contact' },
+      },
+    })
+  } else if (servicesMenuItem && !servicesMenuItem.children?.length) {
+    await payload.updateGlobal({
+      slug: 'main-navigation',
+      data: {
+        mainNavigation: navigationItems.map(item => item === servicesMenuItem
+          ? {
+              ...item,
+              children: [
+                { label: 'Εφαρμογές για κινητά', url: '/#services' },
+                { label: 'Ιστοσελίδες', url: '/#services' },
+                { label: 'Ηλεκτρονικά καταστήματα', url: '/#services' },
+                { label: 'Εξατομικευμένες πλατφόρμες', url: '/#services' },
+              ],
+            }
+          : item),
+      },
+    })
+  }
+
+  const updatedNavigation = await payload.findGlobal({ slug: 'main-navigation', depth: 0 }) as MainNavigationSettings
+  if (!updatedNavigation.mainNavigation?.some(item => item.url === '/paradeigmata-slices')) {
+    await payload.updateGlobal({
+      slug: 'main-navigation',
+      data: {
+        mainNavigation: [
+          ...(updatedNavigation.mainNavigation || []),
+          { label: 'Παραδείγματα', url: '/paradeigmata-slices' },
+        ],
+      },
+    })
+  }
+
+  const footerSettings = await payload.findGlobal({ slug: 'footer-settings', depth: 0 }) as FooterSettings
+  if (!footerSettings.footerColumns?.length) {
+    await payload.updateGlobal({
+      slug: 'footer-settings',
+      data: {
         footerDescription: 'Στρατηγική, σχεδιασμός και τεχνολογία για brands που θέλουν να ξεχωρίζουν.',
         footerColumns: [
           {
@@ -200,18 +246,257 @@ const seed = async () => {
           {
             title: 'Επικοινωνία',
             links: [
-              { label: 'Στείλε μας email', url: 'mailto:hello@stigma.studio' },
+              { label: 'Στείλε μας email', url: 'mailto:hello@digitalspot.gr' },
               { label: 'Πες μας την ιδέα σου', url: '/#contact' },
             ],
           },
         ],
         footerSocialLinks: [],
         footerContact: {
-          email: 'hello@stigma.studio',
+          email: 'hello@digitalspot.gr',
           phone: '+30 210 000 0000',
           location: 'Αθήνα, Ελλάδα · Συνεργασίες παντού',
         },
         copyright: 'Digital Spot. Με φροντίδα, στην Ελλάδα.',
+      },
+    })
+  } else if (footerSettings.copyright === 'Στίγμα Studio. Με φροντίδα, στην Ελλάδα.') {
+    await payload.updateGlobal({
+      slug: 'footer-settings',
+      data: { copyright: 'Digital Spot. Με φροντίδα, στην Ελλάδα.' },
+    })
+  }
+
+  const sliceExamples = await payload.find({
+    collection: 'pages',
+    where: { slug: { equals: 'paradeigmata-slices' } },
+    limit: 1,
+  })
+
+  if (!sliceExamples.docs.length) {
+    await payload.create({
+      collection: 'pages',
+      data: {
+        title: 'Παραδείγματα ενοτήτων',
+        slug: 'paradeigmata-slices',
+        seo: {
+          metaTitle: 'Παραδείγματα ενοτήτων | Digital Spot',
+          metaDescription: 'Δες παραδείγματα από τις επαναχρησιμοποιήσιμες ενότητες του Digital Spot.',
+        },
+        blocks: [
+          {
+            blockType: 'agencyHero',
+            eyebrow: 'Εργαστήριο περιεχομένου',
+            headline: 'Κάθε σελίδα, ένας συνδυασμός από τις σωστές ενότητες.',
+            description: 'Αυτή η σελίδα συγκεντρώνει παραδείγματα όλων των διαθέσιμων slices. Πρόσθεσε, αφαίρεσε ή αναδιάταξέ τα από το Payload.',
+            primaryLabel: 'Μίλησέ μας',
+            primaryUrl: '/#contact',
+            secondaryLabel: 'Δες έργα',
+            secondaryUrl: '/#work',
+            animation: 'fade-up',
+          },
+          {
+            blockType: 'servicesSlice',
+            eyebrow: 'Υπηρεσίες',
+            heading: 'Ολοκληρωμένες ψηφιακές λύσεις.',
+            description: 'Οργάνωσε υπηρεσίες και δυνατότητες σε ευανάγνωστες κάρτες.',
+            services: [
+              { title: 'Ιστοσελίδες', description: 'Σχεδιασμός και ανάπτυξη ιστοσελίδων με εύκολη διαχείριση περιεχομένου.' },
+              { title: 'Εφαρμογές', description: 'Εφαρμογές προσαρμοσμένες στις καθημερινές ανάγκες της ομάδας σου.' },
+              { title: 'Στρατηγική', description: 'Καθαρή κατεύθυνση και ταυτότητα για κάθε ψηφιακό προϊόν.' },
+            ],
+          },
+          {
+            blockType: 'statsSlice',
+            intro: 'Μικρά ή μεγάλα, μετρήσιμα βήματα προς τα εμπρός.',
+            items: [
+              { value: '01', label: 'Σταθερός συνεργάτης' },
+              { value: '360°', label: 'Ολοκληρωμένη προσέγγιση' },
+              { value: '∞', label: 'Δυνατότητα εξέλιξης' },
+            ],
+          },
+          {
+            blockType: 'featuresSlice',
+            eyebrow: 'Τι περιλαμβάνει',
+            heading: 'Σχεδιασμένο γύρω από τη δική σου ομάδα.',
+            features: [
+              { title: 'Σχεδιασμός για όλους', description: 'Προσεγμένη εμπειρία σε κινητό, tablet και υπολογιστή.', icon: '01' },
+              { title: 'Εύκολη διαχείριση', description: 'Άλλαξε κείμενα, εικόνες και ενότητες χωρίς τεχνικές γνώσεις.', icon: '02' },
+              { title: 'Έτοιμο για εξέλιξη', description: 'Μια σταθερή βάση που μεγαλώνει μαζί με τις ανάγκες σου.', icon: '03' },
+            ],
+            animation: 'fade-up',
+          },
+          projectStackExample,
+          {
+            blockType: 'imageTextSlice',
+            eyebrow: 'Από την ιδέα στην πράξη',
+            heading: 'Μια συνεργασία με καθαρά επόμενα βήματα.',
+            description: 'Ξεκινάμε κατανοώντας τους στόχους σου και φτιάχνουμε μια ψηφιακή εμπειρία που τους υπηρετεί.',
+            imagePosition: 'right',
+            buttonLabel: 'Μάθε πώς δουλεύουμε',
+            buttonUrl: '/#process',
+          },
+          {
+            blockType: 'logoCloudSlice',
+            heading: 'Συνεργαζόμαστε με ομάδες που κοιτούν μπροστά',
+            logos: [
+              { name: 'North Studio' },
+              { name: 'Forma' },
+              { name: 'Aster' },
+              { name: 'Mero' },
+              { name: 'Onda' },
+            ],
+          },
+          {
+            blockType: 'projectsSlice',
+            eyebrow: 'Επιλεγμένα έργα',
+            heading: 'Σκέψη, σχεδιασμός και υλοποίηση.',
+            projects: [
+              { name: 'Μια νέα ψηφιακή παρουσία', category: 'Ιστοσελίδα · UX/UI', description: 'Ένα καθαρό, γρήγορο σημείο εκκίνησης για την επόμενη φάση μιας επιχείρησης.', url: '/project-paradeigma' },
+              { name: 'Εργαλεία που απλοποιούν την εργασία', category: 'Ψηφιακό προϊόν', description: 'Λειτουργίες και περιεχόμενο σχεδιασμένα γύρω από τις πραγματικές ανάγκες των ανθρώπων.' },
+            ],
+          },
+          {
+            blockType: 'processSlice',
+            eyebrow: 'Η προσέγγισή μας',
+            heading: 'Από την πρώτη συζήτηση μέχρι την παράδοση.',
+            steps: [
+              { title: 'Ακούμε', description: 'Κατανοούμε την επιχείρηση, το κοινό και τους στόχους σου.' },
+              { title: 'Σχεδιάζουμε', description: 'Ορίζουμε την εμπειρία, την αισθητική και τις προτεραιότητες.' },
+              { title: 'Υλοποιούμε', description: 'Χτίζουμε και δοκιμάζουμε με συχνή επικοινωνία.' },
+              { title: 'Εξελίσσουμε', description: 'Παραμένουμε δίπλα σου και μετά την παράδοση.' },
+            ],
+          },
+          {
+            blockType: 'testimonialSlice',
+            eyebrow: 'Μια συνεργασία που αφήνει αποτύπωμα',
+            quote: 'Η διαδικασία ήταν ξεκάθαρη από την πρώτη μέρα και το αποτέλεσμα ανταποκρίθηκε ακριβώς στις ανάγκες μας.',
+            person: 'Μαρία Παπαδοπούλου',
+            role: 'Ιδρύτρια',
+            company: 'Παράδειγμα Studio',
+          },
+          {
+            blockType: 'faqSlice',
+            heading: 'Συχνές ερωτήσεις.',
+            questions: [
+              { question: 'Πόσο διαρκεί ένα project;', answer: 'Ο χρόνος εξαρτάται από το εύρος και τις λειτουργίες. Μετά την πρώτη συζήτηση ορίζουμε συγκεκριμένο πλάνο.' },
+              { question: 'Μπορώ να αλλάζω το περιεχόμενο;', answer: 'Ναι. Η διαχείριση γίνεται από το Payload CMS, χωρίς να χρειάζονται τεχνικές γνώσεις.' },
+            ],
+          },
+          {
+            blockType: 'projectDetailsSlice',
+            eyebrow: 'Μελέτη έργου',
+            heading: 'Μια εμπειρία που ξεκινά από τους ανθρώπους.',
+            description: 'Παράδειγμα παρουσίασης εσωτερικής σελίδας portfolio με περιγραφή, στοιχεία έργου, πρόκληση, λύση και αποτελέσματα.',
+            client: 'Παράδειγμα Studio',
+            year: '2026',
+            services: 'Στρατηγική · UX/UI · Ανάπτυξη',
+            challenge: 'Η πληροφορία ήταν διάσπαρτη και οι επισκέπτες δυσκολεύονταν να καταλάβουν τι να κάνουν στη συνέχεια.',
+            solution: 'Σχεδιάσαμε μια καθαρή διαδρομή που συνδυάζει περιεχόμενο, σαφή πλοήγηση και ξεκάθαρες ενέργειες.',
+            results: [
+              { value: '01', label: 'Ενιαία ψηφιακή εμπειρία' },
+              { value: '100%', label: 'Προσαρμοσμένο περιεχόμενο' },
+            ],
+            buttonLabel: 'Συζήτησε το δικό σου έργο',
+            buttonUrl: '/#contact',
+          },
+          {
+            blockType: 'callToActionSlice',
+            eyebrow: 'Έχεις μια ιδέα;',
+            heading: 'Ας τη μετατρέψουμε σε κάτι πραγματικό.',
+            description: 'Πες μας τι έχεις στο μυαλό σου και θα βρούμε μαζί την καλύτερη κατεύθυνση.',
+            buttonLabel: 'Επικοινώνησε μαζί μας',
+            buttonUrl: '/#contact',
+          },
+          {
+            blockType: 'contactSlice',
+            eyebrow: 'Επικοινωνία',
+            heading: 'Ας ξεκινήσουμε μια συζήτηση.',
+            description: 'Στείλε μας λίγα λόγια για το project σου και θα επανέλθουμε σύντομα.',
+            email: 'hello@digitalspot.gr',
+            phone: '+30 210 000 0000',
+            location: 'Αθήνα, Ελλάδα · Συνεργασίες παντού',
+            showMap: false,
+          },
+        ],
+      },
+    })
+  } else {
+    const examplePage = sliceExamples.docs[0]
+    const storedBlocks = Array.isArray(examplePage?.blocks) ? examplePage.blocks : []
+    const hasContactMap = storedBlocks.some(
+      block => block.blockType === 'contactSlice' && block.showMap === true && Boolean(block.mapUrl),
+    )
+    const exampleBlocks = storedBlocks.map(block => block.blockType === 'contactSlice'
+        ? {
+            ...block,
+            showMap: true,
+            mapUrl: 'https://maps.google.com/maps?q=Athens%2C%20Greece&output=embed',
+          }
+        : block)
+    const hasProjectStack = exampleBlocks.some(block => block.blockType === 'projectStackSlice')
+    if (examplePage && (!hasProjectStack || !hasContactMap)) {
+      await payload.update({
+        collection: 'pages',
+        id: examplePage.id,
+        data: {
+          blocks: hasProjectStack ? exampleBlocks : [...exampleBlocks, projectStackExample],
+        },
+      })
+    }
+  }
+
+  const projectPage = await payload.find({
+    collection: 'pages',
+    where: { slug: { equals: 'project-paradeigma' } },
+    limit: 1,
+  })
+
+  if (!projectPage.docs.length) {
+    await payload.create({
+      collection: 'pages',
+      data: {
+        title: 'Μελέτη έργου: Ψηφιακή παρουσία',
+        slug: 'project-paradeigma',
+        seo: {
+          metaTitle: 'Μελέτη έργου | Digital Spot',
+          metaDescription: 'Ένα παράδειγμα εσωτερικής σελίδας portfolio του Digital Spot.',
+        },
+        blocks: [
+          {
+            blockType: 'projectDetailsSlice',
+            eyebrow: 'Ιστοσελίδα · UX/UI · Ανάπτυξη',
+            heading: 'Μια ψηφιακή εμπειρία με ξεκάθαρη κατεύθυνση.',
+            description: 'Ένα δείγμα εσωτερικής παρουσίασης έργου, από την αρχική πρόκληση έως την τελική εμπειρία.',
+            client: 'North Studio',
+            year: '2026',
+            services: 'Στρατηγική · Σχεδιασμός · Ανάπτυξη',
+            challenge: 'Η επιχείρηση χρειαζόταν έναν σύγχρονο τρόπο να παρουσιάζει τις υπηρεσίες της και να μετατρέπει το ενδιαφέρον σε επικοινωνία.',
+            solution: 'Δημιουργήσαμε μια ευέλικτη ιστοσελίδα με έμφαση στην αναγνωσιμότητα, την ταχύτητα και τη διαχείριση περιεχομένου από την ομάδα.',
+            results: [
+              { value: '01', label: 'Ενιαία ψηφιακή ταυτότητα' },
+              { value: '100%', label: 'Προσαρμοσμένο CMS' },
+              { value: '24/7', label: 'Διαθεσιμότητα περιεχομένου' },
+            ],
+            buttonLabel: 'Θέλω κάτι αντίστοιχο',
+            buttonUrl: '/#contact',
+            animation: 'fade-up',
+          },
+          {
+            blockType: 'testimonialSlice',
+            quote: 'Μια συνεργασία με συνέπεια, δημιουργική σκέψη και προσοχή σε κάθε λεπτομέρεια.',
+            person: 'Ελένη Νικολάου',
+            role: 'Υπεύθυνη επικοινωνίας',
+            company: 'North Studio',
+          },
+          {
+            blockType: 'callToActionSlice',
+            heading: 'Έχεις ένα project στο μυαλό σου;',
+            description: 'Ας συζητήσουμε πώς μπορούμε να το κάνουμε πραγματικότητα.',
+            buttonLabel: 'Επικοινώνησε μαζί μας',
+            buttonUrl: '/#contact',
+          },
+        ],
       },
     })
   }

@@ -10,7 +10,8 @@ import { buildConfig } from 'payload/config'
 import Media from './src/collections/Media'
 import Pages from './src/collections/Pages'
 import Users from './src/collections/Users'
-import SiteSettings from './src/globals/SiteSettings'
+import MainNavigation from './src/globals/MainNavigation'
+import FooterSettings from './src/globals/FooterSettings'
 
 const s3StorageAdapter = s3Adapter({
   bucket: process.env.S3_BUCKET ?? 'agency-media',
@@ -42,7 +43,7 @@ export default buildConfig({
     bundler: webpackBundler(),
   },
   collections: [Users, Pages, Media],
-  globals: [SiteSettings],
+  globals: [MainNavigation, FooterSettings],
   plugins: [
     cloudStorage({
       collections: {

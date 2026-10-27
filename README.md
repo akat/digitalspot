@@ -36,17 +36,25 @@ In Payload, open **Σελίδες** to create or edit pages. The **Ενότητ�
 - Κεντρικό μήνυμα
 - Υπηρεσίες
 - Αριθμοί και αποτελέσματα
+- Χαρακτηριστικά
+- Επίπεδα λύσης
+- Κείμενο με εικόνα
+- Λογότυπα συνεργατών
 - Έργα
 - Η διαδικασία μας
+- Μαρτυρία πελάτη
 - Συχνές ερωτήσεις
+- Παρουσίαση έργου
 - Πρόσκληση επικοινωνίας
 - Στοιχεία επικοινωνίας
+
+Κάθε slice διαθέτει επιλογή κίνησης εμφάνισης. Η ενότητα επικοινωνίας υποστηρίζει χάρτη μέσω προαιρετικού συνδέσμου ενσωμάτωσης. Οι σελίδες `/paradeigmata-slices` και `/project-paradeigma` περιέχουν έτοιμα παραδείγματα όλων των slices και εσωτερικής παρουσίασης portfolio αντίστοιχα.
 
 The site header and footer are shared layout components. The seeded homepage uses the same reusable slices available to every new page. Replace the sample contact details and illustrative project cards with the agency’s real content before launch.
 
 ## Edit navigation and footer
 
-In the Payload admin, open **Μενού και υποσέλιδο** under **Globals**. Add, remove, and reorder links in **Κύριο μενού**. Each menu item can also have its own **Υπομενού** links; the starter **Υπηρεσίες** item includes Εφαρμογές για κινητά, Ιστοσελίδες, Ηλεκτρονικά καταστήματα, and Εξατομικευμένες πλατφόρμες. Parent and child links can each be assigned their own destination. The same global lets you edit the header button, footer description, grouped footer link columns, social links, contact details, and copyright line. Changes appear in the shared site header and footer on every page.
+In the Payload admin, edit **Κύριο μενού** and **Υποσέλιδο** as separate entries under **Globals**. The menu supports adding, removing, and reordering links, with nested child links and a configurable header button. The starter **Υπηρεσίες** item includes Εφαρμογές για κινητά, Ιστοσελίδες, Ηλεκτρονικά καταστήματα, and Εξατομικευμένες πλατφόρμες. The footer has its own fields for grouped links, social links, contact details, and copyright. Changes appear in the shared site header and footer on every page.
 
 ## Local development
 

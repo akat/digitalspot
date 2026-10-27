@@ -51,9 +51,9 @@ const closeDesktopMenuIfFocusLeaves = (event: FocusEvent) => {
         <img
           src="/brand/digital-spot-logo-dark.png"
           alt="Digital Spot"
-          class="h-11 w-auto"
-          width="92"
-          height="40"
+          class="h-11 w-auto shrink-0"
+          width="148"
+          height="65"
         >
       </NuxtLink>
 
@@ -96,7 +96,7 @@ const closeDesktopMenuIfFocusLeaves = (event: FocusEvent) => {
             v-if="item.children?.length"
             v-show="openDesktopSubmenu === index"
             :id="`desktop-submenu-${index}`"
-            class="absolute left-0 top-full z-50 mt-3 min-w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/10"
+            class="absolute left-0 top-full z-50 min-w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/10 before:absolute before:-top-3 before:left-0 before:h-3 before:w-full before:content-['']"
           >
             <li v-for="(child, childIndex) in item.children" :key="child.id ?? `${child.url}-${childIndex}`">
               <NuxtLink

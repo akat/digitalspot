@@ -3,14 +3,17 @@ import type { SiteSettings } from '~/types/site-settings'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event)
-  const url = new URL('/api/globals/site-settings', config.payloadURL)
+  const menuURL = new URL('/api/globals/main-navigation', config.payloadURL)
+  const footerURL = new URL('/api/globals/footer-settings', config.payloadURL)
 
   try {
-    return await $fetch<SiteSettings>(url.toString(), {
-      headers: { Accept: 'application/json' },
-    })
+    const [menu, footer] = await Promise.all([
+      $fetch<SiteSettings>(menuURL.toString(), { headers: { Accept: 'application/json' } }),
+      $fetch<SiteSettings>(footerURL.toString(), { headers: { Accept: 'application/json' } }),
+    ])
+    return { ...menu, ...footer }
   } catch (error) {
-    console.error('Αποτυχία φόρτωσης των ρυθμίσεων μενού και υποσέλιδου από το Payload.', error)
+    console.error('Αποτυχία φόρτωσης των ρυθμίσεων μενού ή υποσέλιδου από το Payload.', error)
     throw createError({
       statusCode: 502,
       statusMessage: 'Δεν ήταν δυνατή η φόρτωση των ρυθμίσεων πλοήγησης.',
