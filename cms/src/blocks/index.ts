@@ -111,6 +111,7 @@ const ContactSlice: Block = {
     { name: 'location', label: 'Τοποθεσία', type: 'text' },
     { name: 'mapUrl', label: 'Σύνδεσμος ενσωμάτωσης χάρτη', type: 'text' },
     { name: 'showMap', label: 'Εμφάνιση χάρτη', type: 'checkbox', defaultValue: false },
+    { name: 'showLeadForm', label: 'Εμφάνιση φόρμας ενδιαφέροντος', type: 'checkbox', defaultValue: true },
   ],
 }
 

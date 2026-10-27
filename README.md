@@ -17,9 +17,13 @@ The site has no e-shop or Odoo services. Its homepage and all other pages are as
 3. Visit:
    - Website: <http://localhost:3000>
    - Payload admin: <http://localhost:3055/admin>
+   - Tiny CRM: <http://localhost:8000/app>
    - MinIO console: <http://localhost:9001>
 
 The seed command creates an administrator account and the Greek homepage with example agency content. The login email and password come from `PAYLOAD_ADMIN_EMAIL` and `PAYLOAD_ADMIN_PASSWORD` in `.env`.
+The CRM container builds the pinned Tiny CRM source revision, runs its migrations, and creates the CRM administrator from `CRM_ADMIN_EMAIL` and `CRM_ADMIN_PASSWORD`. Set a unique `CRM_API_TOKEN` in `.env`; website leads are posted through the Nuxt server to the CRM's token-protected API and are never sent directly from the browser to the CRM.
+
+The contact slice includes a lead form for name, email, phone, company, requested service, and message. Submissions create a CRM account/contact and a web-sourced lead categorized by the selected service. The CRM is published only on localhost at the port configured by `CRM_PORT`.
 
 Stop the containers without removing saved content:
 
@@ -28,6 +32,22 @@ docker compose down
 ```
 
 MongoDB records and uploaded media persist in Docker volumes.
+
+## Portainer deployment
+
+The production stack is in [portainer-stack.yml](./portainer-stack.yml). Configure these DNS records to point to the Traefik host:
+
+- `digitalspot.gr` and `www.digitalspot.gr` — Nuxt site; the apex redirects to `www`.
+- `payload.digitalspot.gr` — Payload CMS.
+- `crm.digitalspot.gr` — Tiny CRM.
+- `media.digitalspot.gr` — public media endpoint used by Payload.
+- `storage.digitalspot.gr` — MinIO Console.
+
+The GitHub Actions workflow at `.github/workflows/publish-images.yml` builds the frontend, CMS, and CRM images and publishes them to GHCR when code is pushed to the default branch or a version tag is created. Pull requests build the images without publishing them. Image names follow `ghcr.io/<owner>/<repository>/{frontend,cms,crm}`; use the matching prefix for `GHCR_IMAGE_PREFIX` in Portainer. Set the packages to public in GitHub, or configure GHCR registry credentials in Portainer if they are private.
+
+In Portainer, deploy `portainer-stack.yml` as a Stack and enter the values from `portainer.env.example` under **Environment variables**. Replace all blank values with unique production secrets; do not commit the filled values. The stack expects an existing external Docker network named `proxy`, with Traefik entrypoint `websecure` and certificate resolver `le`. Create that network and configure those names in Traefik before deploying. It does not publish database or application ports directly.
+
+The first deployment creates the MinIO bucket and enables anonymous read access for files in that bucket, which is required for public website media. The CRM admin is created on first startup; the Payload admin is created through its first-user setup at `https://payload.digitalspot.gr/admin`. Preserve the named volumes when updating the stack so content, uploads, CRM data, and its generated application key remain available.
 
 ## Reusable page slices
 

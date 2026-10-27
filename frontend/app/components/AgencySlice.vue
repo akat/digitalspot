@@ -189,6 +189,7 @@ const faqOpen = ref<number | null>(0)
         <a v-if="slice.phone" :href="`tel:${slice.phone.replace(/\\s/g, '')}`" class="contact-link"><span>Τηλέφωνο</span><strong>{{ slice.phone }}</strong></a>
         <p v-if="slice.location" class="contact-link sm:col-span-2"><span>Τοποθεσία</span><strong>{{ slice.location }}</strong></p>
       </div>
+      <LeadContactForm v-if="slice.showLeadForm !== false" class="lg:col-span-2" />
       <iframe
         v-if="slice.showMap && slice.mapUrl"
         :src="slice.mapUrl"

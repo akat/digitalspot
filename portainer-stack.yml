@@ -1,0 +1,186 @@
+services:
+  frontend:
+    image: ${GHCR_IMAGE_PREFIX:?Set GHCR_IMAGE_PREFIX}/${FRONTEND_IMAGE_NAME:-frontend}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      cms:
+        condition: service_healthy
+      crm:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      NITRO_HOST: 0.0.0.0
+      NITRO_PORT: 3000
+      NUXT_PUBLIC_SITE_URL: https://www.digitalspot.gr
+      NUXT_PUBLIC_PAYLOAD_URL: https://payload.digitalspot.gr
+      NUXT_PAYLOAD_URL: http://cms:3055
+      CRM_INTERNAL_URL: http://crm
+      CRM_API_TOKEN: ${CRM_API_TOKEN:?Set CRM_API_TOKEN}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.digitalspot_site.rule=Host(`digitalspot.gr`) || Host(`www.digitalspot.gr`)"
+      - "traefik.http.routers.digitalspot_site.entrypoints=websecure"
+      - "traefik.http.routers.digitalspot_site.tls.certresolver=le"
+      - "traefik.http.routers.digitalspot_site.middlewares=digitalspot-www-redirect"
+      - "traefik.http.middlewares.digitalspot-www-redirect.redirectregex.regex=^https?://digitalspot\\.gr/(.*)"
+      - "traefik.http.middlewares.digitalspot-www-redirect.redirectregex.replacement=https://www.digitalspot.gr/$${1}"
+      - "traefik.http.middlewares.digitalspot-www-redirect.redirectregex.permanent=true"
+      - "traefik.http.services.digitalspot_site.loadbalancer.server.port=3000"
+    networks:
+      - proxy
+      - app_internal
+
+  cms:
+    image: ${GHCR_IMAGE_PREFIX:?Set GHCR_IMAGE_PREFIX}/${CMS_IMAGE_NAME:-cms}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      PORT: 3055
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:?Set PAYLOAD_SECRET}
+      PAYLOAD_PUBLIC_SERVER_URL: https://payload.digitalspot.gr
+      DATABASE_URI: mongodb://mongo:27017/digitalspot
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+      S3_BUCKET: agency-media
+      S3_REGION: us-east-1
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_BASE_URL: https://media.digitalspot.gr/agency-media
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3055/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.digitalspot_cms.rule=Host(`payload.digitalspot.gr`)"
+      - "traefik.http.routers.digitalspot_cms.entrypoints=websecure"
+      - "traefik.http.routers.digitalspot_cms.tls.certresolver=le"
+      - "traefik.http.services.digitalspot_cms.loadbalancer.server.port=3055"
+    networks:
+      - proxy
+      - app_internal
+
+  crm:
+    image: ${GHCR_IMAGE_PREFIX:?Set GHCR_IMAGE_PREFIX}/${CRM_IMAGE_NAME:-crm}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: https://crm.digitalspot.gr
+      APP_KEY: ${CRM_APP_KEY:-}
+      APP_NAME: TinyCRM
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/lib/tiny-crm/database.sqlite
+      SESSION_DRIVER: file
+      CACHE_STORE: file
+      QUEUE_CONNECTION: sync
+      WEBSITE_CRM_API_TOKEN: ${CRM_API_TOKEN:?Set CRM_API_TOKEN}
+      CRM_ADMIN_NAME: ${CRM_ADMIN_NAME:-Digital Spot}
+      CRM_ADMIN_EMAIL: ${CRM_ADMIN_EMAIL:?Set CRM_ADMIN_EMAIL}
+      CRM_ADMIN_PASSWORD: ${CRM_ADMIN_PASSWORD:?Set CRM_ADMIN_PASSWORD}
+    volumes:
+      - crm_data:/var/lib/tiny-crm
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1/app/login') === false ? 1 : 0);"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.digitalspot_crm.rule=Host(`crm.digitalspot.gr`) && !PathPrefix(`/api/website/leads`)"
+      - "traefik.http.routers.digitalspot_crm.entrypoints=websecure"
+      - "traefik.http.routers.digitalspot_crm.tls.certresolver=le"
+      - "traefik.http.services.digitalspot_crm.loadbalancer.server.port=80"
+    networks:
+      - proxy
+      - app_internal
+
+  mongo:
+    image: mongo:8
+    restart: unless-stopped
+    command: ["--storageEngine=wiredTiger"]
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - app_internal
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+      MINIO_SERVER_URL: https://media.digitalspot.gr
+      MINIO_BROWSER_REDIRECT_URL: https://storage.digitalspot.gr
+    volumes:
+      - media_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.digitalspot_media.rule=Host(`media.digitalspot.gr`)"
+      - "traefik.http.routers.digitalspot_media.entrypoints=websecure"
+      - "traefik.http.routers.digitalspot_media.tls.certresolver=le"
+      - "traefik.http.services.digitalspot_media.loadbalancer.server.port=9000"
+      - "traefik.http.routers.digitalspot_storage.rule=Host(`storage.digitalspot.gr`)"
+      - "traefik.http.routers.digitalspot_storage.entrypoints=websecure"
+      - "traefik.http.routers.digitalspot_storage.tls.certresolver=le"
+      - "traefik.http.routers.digitalspot_storage.service=digitalspot_storage"
+      - "traefik.http.services.digitalspot_storage.loadbalancer.server.port=9001"
+    networks:
+      - proxy
+      - app_internal
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-ec"]
+    command: |
+      mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
+      mc mb --ignore-existing local/agency-media
+      mc anonymous set download local/agency-media
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+    networks:
+      - app_internal
+
+networks:
+  proxy:
+    external: true
+  app_internal:
+    internal: true
+
+volumes:
+  mongo_data:
+  media_data:
+  crm_data:

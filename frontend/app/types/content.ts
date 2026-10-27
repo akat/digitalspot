@@ -89,7 +89,7 @@ export interface AgencyBlock {
   secondaryUrl?: string | null
   note?: string | null
   intro?: string | null
-  services?: AgencyService[] | null
+  services?: AgencyService[] | string | null
   items?: AgencyStat[] | null
   projects?: AgencyProject[] | null
   steps?: AgencyStep[] | null
@@ -114,7 +114,6 @@ export interface AgencyBlock {
   logos?: AgencyLogo[] | null
   client?: string | null
   year?: string | null
-  services?: string | null
   challenge?: string | null
   solution?: string | null
   results?: AgencyProjectResult[] | null

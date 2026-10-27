@@ -72,12 +72,46 @@ services:
       retries: 10
       start_period: 30s
 
+  crm:
+    build:
+      context: ./crm
+      args:
+        TINY_CRM_REF: 4d78908065cead042427322e53449c56f4bbc0b3
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: ${CRM_APP_URL:-http://localhost:8000}
+      APP_KEY: ${CRM_APP_KEY:-}
+      APP_NAME: TinyCRM
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/lib/tiny-crm/database.sqlite
+      SESSION_DRIVER: file
+      CACHE_STORE: file
+      QUEUE_CONNECTION: sync
+      WEBSITE_CRM_API_TOKEN: ${CRM_API_TOKEN:-change-this-crm-api-token}
+      CRM_ADMIN_NAME: ${CRM_ADMIN_NAME:-Digital Spot}
+      CRM_ADMIN_EMAIL: ${CRM_ADMIN_EMAIL:-admin@digitalspot.local}
+      CRM_ADMIN_PASSWORD: ${CRM_ADMIN_PASSWORD:-change-this-crm-password}
+    volumes:
+      - crm_data:/var/lib/tiny-crm
+    ports:
+      - "127.0.0.1:${CRM_PORT:-8000}:80"
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1/app/login') === false ? 1 : 0);"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
   frontend:
     build:
       context: ./frontend
     restart: unless-stopped
     depends_on:
       cms:
+        condition: service_healthy
+      crm:
         condition: service_healthy
     environment:
       NODE_ENV: production
@@ -87,9 +121,12 @@ services:
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost:3000}
       NUXT_PUBLIC_PAYLOAD_URL: ${NUXT_PUBLIC_PAYLOAD_URL:-http://localhost:3055}
       NUXT_PAYLOAD_URL: http://cms:3055
+      CRM_INTERNAL_URL: http://crm
+      CRM_API_TOKEN: ${CRM_API_TOKEN:-change-this-crm-api-token}
     ports:
       - "3000:3000"
 
 volumes:
   mongo_data:
   media_data:
+  crm_data:
