@@ -11,7 +11,8 @@ services:
       retries: 5
 
   minio:
-    image: minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
+    user: "0:0"
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -22,17 +23,12 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   minio-init:
     image: cgr.dev/chainguard/minio-client:latest
+    restart: on-failure
     depends_on:
       minio:
-        condition: service_healthy
+        condition: service_started
     user: "0:0"
     entrypoint: ["/usr/bin/mc"]
     command: ["alias", "set", "local", "http://minio:9000", "${MINIO_ROOT_USER:-agencyadmin}", "${MINIO_ROOT_PASSWORD:-change-this-minio-password}"]
@@ -43,6 +39,7 @@ services:
 
   minio-init-bucket:
     image: cgr.dev/chainguard/minio-client:latest
+    restart: on-failure
     depends_on:
       minio-init:
         condition: service_completed_successfully
@@ -56,6 +53,7 @@ services:
 
   minio-init-public:
     image: cgr.dev/chainguard/minio-client:latest
+    restart: on-failure
     depends_on:
       minio-init-bucket:
         condition: service_completed_successfully

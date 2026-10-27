@@ -10,7 +10,7 @@ const { data: settings, error } = await useFetch<SiteSettings>('/api/site-settin
 if (error.value) {
   throw createError({
     statusCode: error.value.statusCode || 502,
-    statusMessage: 'Δεν ήταν δυνατή η φόρτωση του υποσέλιδου.',
+    message: 'Δεν ήταν δυνατή η φόρτωση του υποσέλιδου.',
   })
 }
 

@@ -40,13 +40,18 @@ const projectStackExample = {
 }
 
 const seed = async () => {
+  const email = process.env.PAYLOAD_ADMIN_EMAIL?.trim()
+  const password = process.env.PAYLOAD_ADMIN_PASSWORD
+  if (!email || !password) {
+    throw new Error('Τα PAYLOAD_ADMIN_EMAIL και PAYLOAD_ADMIN_PASSWORD πρέπει να έχουν οριστεί πριν από το seed.')
+  }
+
   await payload.init({
     config: payloadConfig,
-    secret: process.env.PAYLOAD_SECRET ?? 'development-secret',
+    secret: process.env.PAYLOAD_SECRET ?? '',
     local: true,
   })
 
-  const email = process.env.PAYLOAD_ADMIN_EMAIL ?? 'admin@stigma.studio'
   const existingUser = await payload.find({
     collection: 'users',
     where: { email: { equals: email } },
@@ -58,7 +63,7 @@ const seed = async () => {
       collection: 'users',
       data: {
         email,
-        password: process.env.PAYLOAD_ADMIN_PASSWORD ?? 'change-this-password',
+        password,
         firstName: 'Διαχειριστής',
         lastName: 'Ιστοσελίδας',
       },

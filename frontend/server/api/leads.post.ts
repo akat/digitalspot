@@ -33,28 +33,28 @@ export default defineEventHandler(async (event) => {
   const message = cleanString(body?.message)
 
   if (name.length < 2 || name.length > 160) {
-    throw createError({ statusCode: 400, statusMessage: 'Συμπλήρωσε το ονοματεπώνυμό σου.' })
+    throw createError({ statusCode: 400, message: 'Συμπλήρωσε το ονοματεπώνυμό σου.' })
   }
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw createError({ statusCode: 400, statusMessage: 'Συμπλήρωσε μια έγκυρη διεύθυνση email.' })
+    throw createError({ statusCode: 400, message: 'Συμπλήρωσε μια έγκυρη διεύθυνση email.' })
   }
   if (phone.length > 40 || company.length > 160) {
-    throw createError({ statusCode: 400, statusMessage: 'Τα στοιχεία επικοινωνίας είναι πολύ μεγάλα.' })
+    throw createError({ statusCode: 400, message: 'Τα στοιχεία επικοινωνίας είναι πολύ μεγάλα.' })
   }
   if (!interestOptions.has(interest)) {
-    throw createError({ statusCode: 400, statusMessage: 'Επίλεξε την υπηρεσία που σε ενδιαφέρει.' })
+    throw createError({ statusCode: 400, message: 'Επίλεξε την υπηρεσία που σε ενδιαφέρει.' })
   }
   if (message.length < 10 || message.length > 10000) {
-    throw createError({ statusCode: 400, statusMessage: 'Το μήνυμα πρέπει να έχει από 10 έως 10.000 χαρακτήρες.' })
+    throw createError({ statusCode: 400, message: 'Το μήνυμα πρέπει να έχει από 10 έως 10.000 χαρακτήρες.' })
   }
   if (body.consent !== true) {
-    throw createError({ statusCode: 400, statusMessage: 'Χρειάζεται να συμφωνήσεις για να επικοινωνήσουμε σχετικά με το αίτημά σου.' })
+    throw createError({ statusCode: 400, message: 'Χρειάζεται να συμφωνήσεις για να επικοινωνήσουμε σχετικά με το αίτημά σου.' })
   }
 
   const config = useRuntimeConfig(event)
   if (!config.crmApiToken) {
     console.error('Λείπει η ρύθμιση CRM_API_TOKEN για την αποστολή αιτημάτων στο CRM.')
-    throw createError({ statusCode: 503, statusMessage: 'Η φόρμα επικοινωνίας δεν είναι προσωρινά διαθέσιμη.' })
+    throw createError({ statusCode: 503, message: 'Η φόρμα επικοινωνίας δεν είναι προσωρινά διαθέσιμη.' })
   }
 
   try {
@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
     console.error('Αποτυχία καταχώρισης του αιτήματος επικοινωνίας στο CRM.', error)
     throw createError({
       statusCode: 502,
-      statusMessage: 'Δεν ήταν δυνατή η αποστολή του αιτήματος. Δοκίμασε ξανά αργότερα.',
+      message: 'Δεν ήταν δυνατή η αποστολή του αιτήματος. Δοκίμασε ξανά αργότερα.',
     })
   }
 })

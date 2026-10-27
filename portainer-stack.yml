@@ -18,7 +18,7 @@ services:
       CRM_INTERNAL_URL: http://crm
       CRM_API_TOKEN: ${CRM_API_TOKEN:?Set CRM_API_TOKEN}
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -51,11 +51,15 @@ services:
         condition: service_healthy
       minio-init-public:
         condition: service_completed_successfully
+      cms-seed:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       PORT: 3055
       PAYLOAD_SECRET: ${PAYLOAD_SECRET:?Set PAYLOAD_SECRET}
       PAYLOAD_PUBLIC_SERVER_URL: https://payload.digitalspot.gr
+      PAYLOAD_ADMIN_EMAIL: ${PAYLOAD_ADMIN_EMAIL:?Set PAYLOAD_ADMIN_EMAIL}
+      PAYLOAD_ADMIN_PASSWORD: ${PAYLOAD_ADMIN_PASSWORD:?Set PAYLOAD_ADMIN_PASSWORD}
       DATABASE_URI: mongodb://mongo:27017/digitalspot
       S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
       S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
@@ -80,6 +84,30 @@ services:
       - proxy
       - app_internal
 
+  cms-seed:
+    image: ${GHCR_IMAGE_PREFIX:?Set GHCR_IMAGE_PREFIX}/${CMS_IMAGE_NAME:-cms}:${IMAGE_TAG:-latest}
+    restart: "no"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      minio-init-public:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:?Set PAYLOAD_SECRET}
+      PAYLOAD_PUBLIC_SERVER_URL: https://payload.digitalspot.gr
+      PAYLOAD_ADMIN_EMAIL: ${PAYLOAD_ADMIN_EMAIL:?Set PAYLOAD_ADMIN_EMAIL}
+      PAYLOAD_ADMIN_PASSWORD: ${PAYLOAD_ADMIN_PASSWORD:?Set PAYLOAD_ADMIN_PASSWORD}
+      DATABASE_URI: mongodb://mongo:27017/digitalspot
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+      S3_BUCKET: agency-media
+      S3_REGION: us-east-1
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_BASE_URL: https://media.digitalspot.gr/agency-media
+    networks:
+      - app_internal
+
   crm:
     image: ${GHCR_IMAGE_PREFIX:?Set GHCR_IMAGE_PREFIX}/${CRM_IMAGE_NAME:-crm}:${IMAGE_TAG:-latest}
     restart: unless-stopped
@@ -87,6 +115,7 @@ services:
       APP_ENV: production
       APP_DEBUG: "false"
       APP_URL: https://crm.digitalspot.gr
+      ASSET_URL: https://crm.digitalspot.gr
       APP_KEY: ${CRM_APP_KEY:-}
       APP_NAME: TinyCRM
       DB_CONNECTION: sqlite
@@ -132,7 +161,8 @@ services:
       - app_internal
 
   minio:
-    image: minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
+    user: "0:0"
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -142,11 +172,6 @@ services:
       MINIO_BROWSER_REDIRECT_URL: https://storage.digitalspot.gr
     volumes:
       - media_data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
@@ -165,9 +190,10 @@ services:
 
   minio-init:
     image: cgr.dev/chainguard/minio-client:latest
+    restart: on-failure
     depends_on:
       minio:
-        condition: service_healthy
+        condition: service_started
     user: "0:0"
     entrypoint: ["/usr/bin/mc"]
     command: ["alias", "set", "local", "http://minio:9000", "${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}", "${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}"]
@@ -180,6 +206,7 @@ services:
 
   minio-init-bucket:
     image: cgr.dev/chainguard/minio-client:latest
+    restart: on-failure
     depends_on:
       minio-init:
         condition: service_completed_successfully
@@ -195,6 +222,7 @@ services:
 
   minio-init-public:
     image: cgr.dev/chainguard/minio-client:latest
+    restart: on-failure
     depends_on:
       minio-init-bucket:
         condition: service_completed_successfully

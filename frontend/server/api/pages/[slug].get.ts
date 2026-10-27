@@ -4,7 +4,7 @@ import type { AgencyPage } from '~/types/content'
 export default defineEventHandler(async (event) => {
   const slug = getRouterParam(event, 'slug')
   if (!slug) {
-    throw createError({ statusCode: 400, statusMessage: 'Λείπει η διεύθυνση της σελίδας.' })
+    throw createError({ statusCode: 400, message: 'Λείπει η διεύθυνση της σελίδας.' })
   }
 
   const config = useRuntimeConfig(event)
@@ -20,12 +20,12 @@ export default defineEventHandler(async (event) => {
     })
   } catch (error) {
     console.error(`Αποτυχία φόρτωσης της σελίδας "${slug}" από το Payload.`, error)
-    throw createError({ statusCode: 502, statusMessage: 'Δεν ήταν δυνατή η φόρτωση της σελίδας.' })
+    throw createError({ statusCode: 502, message: 'Δεν ήταν δυνατή η φόρτωση της σελίδας.' })
   }
 
   const page = response.docs?.[0]
   if (!page) {
-    throw createError({ statusCode: 404, statusMessage: 'Η σελίδα δεν βρέθηκε.' })
+    throw createError({ statusCode: 404, message: 'Η σελίδα δεν βρέθηκε.' })
   }
 
   return page

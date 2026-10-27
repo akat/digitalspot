@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     console.error('Αποτυχία φόρτωσης των ρυθμίσεων μενού ή υποσέλιδου από το Payload.', error)
     throw createError({
       statusCode: 502,
-      statusMessage: 'Δεν ήταν δυνατή η φόρτωση των ρυθμίσεων πλοήγησης.',
+      message: 'Δεν ήταν δυνατή η φόρτωση των ρυθμίσεων πλοήγησης.',
     })
   }
 })

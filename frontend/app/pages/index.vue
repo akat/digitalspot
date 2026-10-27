@@ -8,7 +8,7 @@ const { data: page, error } = await useFetch<AgencyPage>('/api/pages/home', {
 if (error.value) {
   throw createError({
     statusCode: error.value.statusCode || 500,
-    statusMessage: error.value.statusMessage || 'Δεν ήταν δυνατή η φόρτωση της αρχικής σελίδας.',
+    message: error.value.statusMessage || 'Δεν ήταν δυνατή η φόρτωση της αρχικής σελίδας.',
   })
 }
 
