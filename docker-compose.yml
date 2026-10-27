@@ -146,8 +146,8 @@ services:
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost:3000}
       NUXT_PUBLIC_PAYLOAD_URL: ${NUXT_PUBLIC_PAYLOAD_URL:-http://localhost:3055}
       NUXT_PAYLOAD_URL: http://cms:3055
-      CRM_INTERNAL_URL: http://crm
-      CRM_API_TOKEN: ${CRM_API_TOKEN:-change-this-crm-api-token}
+      NUXT_CRM_URL: http://crm
+      NUXT_CRM_API_TOKEN: ${CRM_API_TOKEN:-change-this-crm-api-token}
     ports:
       - "3000:3000"
 

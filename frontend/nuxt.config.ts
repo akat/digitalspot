@@ -18,8 +18,8 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     payloadURL: process.env.NUXT_PAYLOAD_URL || process.env.NUXT_INTERNAL_PAYLOAD_URL || 'http://localhost:3055',
-    crmURL: process.env.CRM_INTERNAL_URL || 'http://localhost:8000',
-    crmApiToken: process.env.CRM_API_TOKEN || '',
+    crmURL: process.env.NUXT_CRM_URL || process.env.CRM_INTERNAL_URL || 'http://localhost:8000',
+    crmApiToken: process.env.NUXT_CRM_API_TOKEN || process.env.CRM_API_TOKEN || '',
     public: {
       siteUrl,
       payloadURL: process.env.NUXT_PUBLIC_PAYLOAD_URL || 'http://localhost:3055',

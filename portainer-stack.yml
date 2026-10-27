@@ -15,8 +15,8 @@ services:
       NUXT_PUBLIC_SITE_URL: https://www.digitalspot.gr
       NUXT_PUBLIC_PAYLOAD_URL: https://payload.digitalspot.gr
       NUXT_PAYLOAD_URL: http://cms:3055
-      CRM_INTERNAL_URL: http://crm
-      CRM_API_TOKEN: ${CRM_API_TOKEN:?Set CRM_API_TOKEN}
+      NUXT_CRM_URL: http://crm
+      NUXT_CRM_API_TOKEN: ${CRM_API_TOKEN:?Set CRM_API_TOKEN}
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
