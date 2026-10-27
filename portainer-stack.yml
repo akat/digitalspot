@@ -51,8 +51,6 @@ services:
         condition: service_healthy
       minio-init-public:
         condition: service_completed_successfully
-      cms-seed:
-        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       PORT: 3055
@@ -89,10 +87,8 @@ services:
     restart: "no"
     command: ["npm", "run", "seed"]
     depends_on:
-      mongo:
+      cms:
         condition: service_healthy
-      minio-init-public:
-        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       PAYLOAD_SECRET: ${PAYLOAD_SECRET:?Set PAYLOAD_SECRET}
@@ -179,6 +175,7 @@ services:
       - "traefik.http.routers.digitalspot_media.rule=Host(`media.digitalspot.gr`)"
       - "traefik.http.routers.digitalspot_media.entrypoints=websecure"
       - "traefik.http.routers.digitalspot_media.tls.certresolver=le"
+      - "traefik.http.routers.digitalspot_media.service=digitalspot_media"
       - "traefik.http.services.digitalspot_media.loadbalancer.server.port=9000"
       - "traefik.http.routers.digitalspot_storage.rule=Host(`storage.digitalspot.gr`)"
       - "traefik.http.routers.digitalspot_storage.entrypoints=websecure"
