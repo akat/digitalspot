@@ -1,11 +1,15 @@
+# All services are prefixed with `digitalspot-` because the `proxy` network is shared with other
+# stacks (e.g. ev-properties has `minio` and `mongo` there). On a shared network a service name is a
+# DNS name, so generic names like `minio`/`mongo`/`cms` resolve to other stacks' containers too.
+
 services:
-  frontend:
+  digitalspot-frontend:
     image: ${GHCR_IMAGE_PREFIX:?Set GHCR_IMAGE_PREFIX}/${FRONTEND_IMAGE_NAME:-frontend}:${IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
-      cms:
+      digitalspot-cms:
         condition: service_healthy
-      crm:
+      digitalspot-crm:
         condition: service_healthy
     environment:
       NODE_ENV: production
@@ -14,9 +18,11 @@ services:
       NITRO_PORT: 3000
       NUXT_PUBLIC_SITE_URL: https://www.digitalspot.gr
       NUXT_PUBLIC_PAYLOAD_URL: https://payload.digitalspot.gr
-      NUXT_PAYLOAD_URL: http://cms:3055
-      NUXT_CRM_URL: http://crm
-      NUXT_CRM_API_TOKEN: ${CRM_API_TOKEN:?Set CRM_API_TOKEN}
+      NUXT_PAYLOAD_URL: http://digitalspot-cms:3055
+      CRM_INTERNAL_URL: http://digitalspot-crm
+      NUXT_CRM_API_TOKEN: ${NUXT_CRM_API_TOKEN:?Set NUXT_CRM_API_TOKEN}
+      NUXT_CRM_URL: ${NUXT_CRM_URL:?Set NUXT_CRM_URL}
+      CRM_API_TOKEN: ${CRM_API_TOKEN:?Set CRM_API_TOKEN}
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
@@ -43,13 +49,13 @@ services:
       - proxy
       - app_internal
 
-  cms:
+  digitalspot-cms:
     image: ${GHCR_IMAGE_PREFIX:?Set GHCR_IMAGE_PREFIX}/${CMS_IMAGE_NAME:-cms}:${IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
-      mongo:
+      digitalspot-mongo:
         condition: service_healthy
-      minio-init-public:
+      digitalspot-minio-init-public:
         condition: service_completed_successfully
     environment:
       NODE_ENV: production
@@ -58,12 +64,12 @@ services:
       PAYLOAD_PUBLIC_SERVER_URL: https://payload.digitalspot.gr
       PAYLOAD_ADMIN_EMAIL: ${PAYLOAD_ADMIN_EMAIL:?Set PAYLOAD_ADMIN_EMAIL}
       PAYLOAD_ADMIN_PASSWORD: ${PAYLOAD_ADMIN_PASSWORD:?Set PAYLOAD_ADMIN_PASSWORD}
-      DATABASE_URI: mongodb://mongo:27017/digitalspot
+      DATABASE_URI: mongodb://digitalspot-mongo:27017/digitalspot
       S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
       S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
       S3_BUCKET: agency-media
       S3_REGION: us-east-1
-      S3_ENDPOINT: http://minio:9000
+      S3_ENDPOINT: http://digitalspot-minio:9000
       S3_PUBLIC_BASE_URL: https://media.digitalspot.gr/agency-media
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3055/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
@@ -82,12 +88,12 @@ services:
       - proxy
       - app_internal
 
-  cms-seed:
+  digitalspot-cms-seed:
     image: ${GHCR_IMAGE_PREFIX:?Set GHCR_IMAGE_PREFIX}/${CMS_IMAGE_NAME:-cms}:${IMAGE_TAG:-latest}
     restart: "no"
     command: ["npm", "run", "seed"]
     depends_on:
-      cms:
+      digitalspot-cms:
         condition: service_healthy
     environment:
       NODE_ENV: production
@@ -95,17 +101,17 @@ services:
       PAYLOAD_PUBLIC_SERVER_URL: https://payload.digitalspot.gr
       PAYLOAD_ADMIN_EMAIL: ${PAYLOAD_ADMIN_EMAIL:?Set PAYLOAD_ADMIN_EMAIL}
       PAYLOAD_ADMIN_PASSWORD: ${PAYLOAD_ADMIN_PASSWORD:?Set PAYLOAD_ADMIN_PASSWORD}
-      DATABASE_URI: mongodb://mongo:27017/digitalspot
+      DATABASE_URI: mongodb://digitalspot-mongo:27017/digitalspot
       S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
       S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
       S3_BUCKET: agency-media
       S3_REGION: us-east-1
-      S3_ENDPOINT: http://minio:9000
+      S3_ENDPOINT: http://digitalspot-minio:9000
       S3_PUBLIC_BASE_URL: https://media.digitalspot.gr/agency-media
     networks:
       - app_internal
 
-  crm:
+  digitalspot-crm:
     image: ${GHCR_IMAGE_PREFIX:?Set GHCR_IMAGE_PREFIX}/${CRM_IMAGE_NAME:-crm}:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
@@ -143,7 +149,7 @@ services:
       - proxy
       - app_internal
 
-  mongo:
+  digitalspot-mongo:
     image: mongo:8
     restart: unless-stopped
     command: ["--storageEngine=wiredTiger"]
@@ -157,7 +163,7 @@ services:
     networks:
       - app_internal
 
-  minio:
+  digitalspot-minio:
     image: cgr.dev/chainguard/minio:latest
     user: "0:0"
     restart: unless-stopped
@@ -186,15 +192,15 @@ services:
       - proxy
       - app_internal
 
-  minio-init:
+  digitalspot-minio-init:
     image: cgr.dev/chainguard/minio-client:latest
     restart: on-failure
     depends_on:
-      minio:
+      digitalspot-minio:
         condition: service_started
     user: "0:0"
     entrypoint: ["/usr/bin/mc"]
-    command: ["alias", "set", "local", "http://minio:9000", "${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}", "${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}"]
+    command: ["alias", "set", "local", "http://digitalspot-minio:9000", "${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}", "${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}"]
     environment:
       MC_CONFIG_DIR: /mc-config
     volumes:
@@ -202,11 +208,11 @@ services:
     networks:
       - app_internal
 
-  minio-init-bucket:
+  digitalspot-minio-init-bucket:
     image: cgr.dev/chainguard/minio-client:latest
     restart: on-failure
     depends_on:
-      minio-init:
+      digitalspot-minio-init:
         condition: service_completed_successfully
     user: "0:0"
     entrypoint: ["/usr/bin/mc"]
@@ -218,11 +224,11 @@ services:
     networks:
       - app_internal
 
-  minio-init-public:
+  digitalspot-minio-init-public:
     image: cgr.dev/chainguard/minio-client:latest
     restart: on-failure
     depends_on:
-      minio-init-bucket:
+      digitalspot-minio-init-bucket:
         condition: service_completed_successfully
     user: "0:0"
     entrypoint: ["/usr/bin/mc"]
@@ -240,6 +246,7 @@ networks:
   app_internal:
     internal: true
 
+# Volume names are unchanged, so existing data is kept (they are scoped by the stack name, not the service name).
 volumes:
   mongo_data:
   media_data:
