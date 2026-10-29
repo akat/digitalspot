@@ -7,6 +7,7 @@ import { webpackBundler } from '@payloadcms/bundler-webpack'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { buildConfig } from 'payload/config'
 
+import { backfillPageVersions } from './src/backfillPageVersions'
 import Media from './src/collections/Media'
 import Pages from './src/collections/Pages'
 import Users from './src/collections/Users'
@@ -56,6 +57,7 @@ export default buildConfig({
     bundler: webpackBundler(),
   },
   collections: [Users, Pages, Media],
+  onInit: backfillPageVersions,
   globals: [MainNavigation, FooterSettings],
   plugins: [
     cloudStorage({
