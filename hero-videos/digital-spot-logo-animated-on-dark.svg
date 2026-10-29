@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-168.5 -168.0 660 660" role="img" aria-label="Digital Spot">
+  <style>
+    .spin, .orbit-dot, .orbit-path, .spot, .halo, .ripple { transform-origin: 161.5px 162.0px; }
+    .spin { animation: ring 8s infinite; }
+    .orbit-dot { animation: orbit 8s infinite; }
+    .orbit-path { animation: orbit-path 8s infinite; }
+    .spot { animation: spot 8s infinite; }
+    .halo { animation: halo 4s ease-in-out infinite alternate; }
+    .ripple { animation: ripple 4s cubic-bezier(.2,.6,.3,1) infinite; opacity: 0; }
+    .ripple:nth-of-type(2) { animation-delay: -1.333s; }
+    .ripple:nth-of-type(3) { animation-delay: -2.667s; }
+    @keyframes orbit {
+      0%, 12% { transform: rotate(0deg); animation-timing-function: cubic-bezier(.65,0,.35,1); }
+      52%, 100% { transform: rotate(360deg); }
+    }
+    @keyframes ring {
+      0%, 18% { transform: rotate(0deg); animation-timing-function: cubic-bezier(.65,0,.35,1); }
+      58%, 100% { transform: rotate(-360deg); }
+    }
+    @keyframes orbit-path {
+      0%, 10% { opacity: 0; }
+      25%, 45% { opacity: .16; }
+      60%, 100% { opacity: 0; }
+    }
+    @keyframes spot {
+      0%, 55% { transform: scale(1); }
+      59% { transform: scale(.86); }
+      64% { transform: scale(1.07); }
+      69%, 100% { transform: scale(1); }
+    }
+    @keyframes halo {
+      from { opacity: .12; transform: scale(.92); }
+      to { opacity: .26; transform: scale(1.06); }
+    }
+    @keyframes ripple {
+      0% { transform: scale(.35); opacity: 0; }
+      15% { opacity: .32; }
+      100% { transform: scale(1); opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; }
+      .ripple, .orbit-path { opacity: 0; }
+    }
+  </style>
+  <defs>
+    <radialGradient id="halo">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g>
+    <circle class="ripple" cx="161.5" cy="162.0" r="318" fill="none" stroke="#ffffff" stroke-width="2"/>
+    <circle class="ripple" cx="161.5" cy="162.0" r="318" fill="none" stroke="#ffffff" stroke-width="2"/>
+    <circle class="ripple" cx="161.5" cy="162.0" r="318" fill="none" stroke="#ffffff" stroke-width="2"/>
+  </g>
+  <circle class="halo" cx="161.5" cy="162.0" r="210" fill="url(#halo)"/>
+  <circle class="orbit-path" cx="161.5" cy="162.0" r="195.16" fill="none" stroke="#ffffff" stroke-width="2" opacity="0"/>
+  <path class="spin" d="M107.51 34.19 A138.75 138.75 0 1 1 33.69 108.01" fill="none" stroke="#ffffff" stroke-width="46.5" stroke-linecap="round"/>
+  <circle class="spot" cx="161.5" cy="162.0" r="62.0" fill="#ffffff"/>
+  <circle class="orbit-dot" cx="23.5" cy="24.0" r="23.5" fill="#ffffff"/>
+</svg>

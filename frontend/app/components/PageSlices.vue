@@ -4,6 +4,7 @@ import type { AgencyBlock, SliceTheme } from '~/types/content'
 
 // Slices without an explicit theme keep the background they were designed with.
 const defaultThemes: Record<string, SliceTheme> = {
+  agencyHeroAnimated: 'dark',
   statsSlice: 'dark',
   callToActionSlice: 'dark',
   processSlice: 'ecru',

@@ -29,12 +29,6 @@ const imageAlt = (image: AgencyImage | string | null | undefined, fallback: stri
 const isVideo = (media: AgencyImage | string | null | undefined) =>
   typeof media === 'object' && Boolean(media?.mimeType?.startsWith('video/'))
 
-// Hero videos autoplay; stop them for visitors who prefer reduced motion.
-const heroVideo = ref<HTMLVideoElement | null>(null)
-watch(heroVideo, (video) => {
-  if (video && window.matchMedia('(prefers-reduced-motion: reduce)').matches) video.pause()
-})
-
 const faqOpen = ref<number | null>(0)
 </script>
 
@@ -61,20 +55,13 @@ const faqOpen = ref<number | null>(0)
         <p v-if="slice.note" class="mt-6 text-sm text-slice-subtle">{{ slice.note }}</p>
       </div>
 
-      <div v-if="imageUrl(slice.visual)" class="hero-media relative mx-auto w-full max-w-[540px]" :class="`hero-media-${slice.visualFit || 'contain'}`">
-        <video
-          v-if="isVideo(slice.visual)"
-          ref="heroVideo"
-          :src="imageUrl(slice.visual)"
-          :aria-label="imageAlt(slice.visual, '') || undefined"
-          role="img"
-          autoplay
-          muted
-          loop
-          playsinline
-        />
-        <img v-else :src="imageUrl(slice.visual)" :alt="imageAlt(slice.visual, '')" fetchpriority="high">
-      </div>
+      <HeroMedia
+        v-if="imageUrl(slice.visual)"
+        :src="imageUrl(slice.visual)"
+        :alt="imageAlt(slice.visual, '')"
+        :video="isVideo(slice.visual)"
+        :fit="slice.visualFit"
+      />
       <div v-else class="hero-visual relative mx-auto w-full max-w-[540px]" aria-hidden="true">
         <div class="hero-orbit hero-orbit-one" />
         <div class="hero-orbit hero-orbit-two" />
@@ -98,6 +85,40 @@ const faqOpen = ref<number | null>(0)
       </div>
     </div>
     <div class="agency-shell pb-8"><div class="flex flex-wrap items-center justify-between gap-5 border-t border-slice-line pt-7"><p class="text-xs font-semibold uppercase tracking-[.18em] text-slice-subtle">Από την πρώτη ιδέα μέχρι την επόμενη μεγάλη κίνηση</p><a href="#services" class="text-sm font-semibold text-slice-fg transition hover:opacity-70">Ανακάλυψε τι μπορούμε να κάνουμε <span aria-hidden="true">↓</span></a></div></div>
+  </section>
+
+  <section v-else-if="slice.blockType === 'agencyHeroAnimated'" class="hero-animated relative overflow-hidden">
+    <HeroWaves />
+    <div
+      class="agency-shell relative grid min-h-[78vh] items-center gap-14 py-24 sm:py-32"
+      :class="imageUrl(slice.visual) ? 'lg:grid-cols-[1.05fr_.95fr]' : 'justify-items-center text-center'"
+    >
+      <div :class="imageUrl(slice.visual) ? 'max-w-2xl' : 'flex max-w-4xl flex-col items-center'">
+        <p v-if="slice.eyebrow" class="eyebrow"><span class="live-dot" />{{ slice.eyebrow }}</p>
+        <h1 class="mt-7 text-5xl font-semibold leading-[1.04] tracking-[-0.055em] text-slice-fg sm:text-6xl lg:text-7xl">
+          {{ slice.headline }}
+        </h1>
+        <p v-if="slice.description" class="mt-7 max-w-2xl text-lg leading-8 text-slice-body sm:text-xl">
+          {{ slice.description }}
+        </p>
+        <div class="mt-9 flex flex-wrap gap-3" :class="{ 'justify-center': !imageUrl(slice.visual) }">
+          <NuxtLink v-if="slice.primaryLabel && slice.primaryUrl" :to="slice.primaryUrl" class="primary-button">
+            {{ slice.primaryLabel }} <span aria-hidden="true">↗</span>
+          </NuxtLink>
+          <NuxtLink v-if="slice.secondaryLabel && slice.secondaryUrl" :to="slice.secondaryUrl" class="secondary-button">
+            {{ slice.secondaryLabel }}
+          </NuxtLink>
+        </div>
+        <p v-if="slice.note" class="mt-6 text-sm text-slice-subtle">{{ slice.note }}</p>
+      </div>
+      <HeroMedia
+        v-if="imageUrl(slice.visual)"
+        :src="imageUrl(slice.visual)"
+        :alt="imageAlt(slice.visual, '')"
+        :video="isVideo(slice.visual)"
+        :fit="slice.visualFit"
+      />
+    </div>
   </section>
 
   <section v-else-if="slice.blockType === 'servicesSlice'" id="services" class="agency-section agency-shell">

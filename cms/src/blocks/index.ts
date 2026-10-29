@@ -1,40 +1,51 @@
 import type { Block, Field } from 'payload/types'
 
+const heroTextFields: Field[] = [
+  { name: 'eyebrow', label: 'Μικρός τίτλος', type: 'text' },
+  { name: 'headline', label: 'Κεντρικός τίτλος', type: 'text', required: true },
+  { name: 'description', label: 'Περιγραφή', type: 'textarea', required: true },
+  { name: 'primaryLabel', label: 'Κείμενο βασικού κουμπιού', type: 'text', required: true },
+  { name: 'primaryUrl', label: 'Σύνδεσμος βασικού κουμπιού', type: 'text', required: true },
+  { name: 'secondaryLabel', label: 'Κείμενο δεύτερου κουμπιού', type: 'text' },
+  { name: 'secondaryUrl', label: 'Σύνδεσμος δεύτερου κουμπιού', type: 'text' },
+  { name: 'note', label: 'Σύντομη σημείωση', type: 'text' },
+]
+
+const heroVisualFields: Field[] = [
+  {
+    name: 'visual',
+    label: 'Εικόνα ή animation',
+    type: 'upload',
+    relationTo: 'media',
+    admin: {
+      description: 'Εικόνα (JPG, PNG, WebP, SVG), GIF ή βίντεο MP4/WebM που παίζει αθόρυβα σε επανάληψη. Αν μείνει κενό, το «Κεντρικό μήνυμα» δείχνει το προεπιλεγμένο γράφημα και το «Κεντρικό μήνυμα με animation» κεντράρει το κείμενο.',
+    },
+  },
+  {
+    name: 'visualFit',
+    label: 'Προσαρμογή εικόνας',
+    type: 'select',
+    defaultValue: 'contain',
+    options: [
+      { label: 'Ολόκληρη, χωρίς περικοπή', value: 'contain' },
+      { label: 'Γέμισμα πλαισίου με στρογγυλεμένες γωνίες', value: 'cover' },
+    ],
+    admin: {
+      condition: (_, siblingData) => Boolean(siblingData?.visual),
+    },
+  },
+]
+
 const AgencyHero: Block = {
   slug: 'agencyHero',
   labels: { singular: 'Κεντρικό μήνυμα', plural: 'Κεντρικά μηνύματα' },
-  fields: [
-    { name: 'eyebrow', label: 'Μικρός τίτλος', type: 'text' },
-    { name: 'headline', label: 'Κεντρικός τίτλος', type: 'text', required: true },
-    { name: 'description', label: 'Περιγραφή', type: 'textarea', required: true },
-    { name: 'primaryLabel', label: 'Κείμενο βασικού κουμπιού', type: 'text', required: true },
-    { name: 'primaryUrl', label: 'Σύνδεσμος βασικού κουμπιού', type: 'text', required: true },
-    { name: 'secondaryLabel', label: 'Κείμενο δεύτερου κουμπιού', type: 'text' },
-    { name: 'secondaryUrl', label: 'Σύνδεσμος δεύτερου κουμπιού', type: 'text' },
-    { name: 'note', label: 'Σύντομη σημείωση', type: 'text' },
-    {
-      name: 'visual',
-      label: 'Εικόνα ή animation',
-      type: 'upload',
-      relationTo: 'media',
-      admin: {
-        description: 'Εικόνα (JPG, PNG, WebP, SVG), GIF ή βίντεο MP4/WebM που παίζει αθόρυβα σε επανάληψη. Αν μείνει κενό, εμφανίζεται το προεπιλεγμένο γράφημα.',
-      },
-    },
-    {
-      name: 'visualFit',
-      label: 'Προσαρμογή εικόνας',
-      type: 'select',
-      defaultValue: 'contain',
-      options: [
-        { label: 'Ολόκληρη, χωρίς περικοπή', value: 'contain' },
-        { label: 'Γέμισμα πλαισίου με στρογγυλεμένες γωνίες', value: 'cover' },
-      ],
-      admin: {
-        condition: (_, siblingData) => Boolean(siblingData?.visual),
-      },
-    },
-  ],
+  fields: [...heroTextFields, ...heroVisualFields],
+}
+
+const AgencyHeroAnimated: Block = {
+  slug: 'agencyHeroAnimated',
+  labels: { singular: 'Κεντρικό μήνυμα με animation', plural: 'Κεντρικά μηνύματα με animation' },
+  fields: [...heroTextFields, ...heroVisualFields],
 }
 
 const ServicesSlice: Block = {
@@ -290,6 +301,7 @@ const ProjectDetailsSlice: Block = {
 
 const slices: Block[] = [
   AgencyHero,
+  AgencyHeroAnimated,
   ServicesSlice,
   StatsSlice,
   ProjectsSlice,
