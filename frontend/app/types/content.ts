@@ -16,6 +16,7 @@ export interface AgencyStat {
 export interface AgencyImage {
   url?: string
   alt?: string
+  mimeType?: string
   sizes?: Record<string, { url?: string } | undefined>
 }
 
@@ -76,6 +77,8 @@ export interface AgencyProjectGalleryItem {
   caption?: string | null
 }
 
+export type SliceTheme = 'light' | 'ecru' | 'dark'
+
 export interface AgencyBlock {
   id?: string
   blockType: string
@@ -88,6 +91,8 @@ export interface AgencyBlock {
   secondaryLabel?: string | null
   secondaryUrl?: string | null
   note?: string | null
+  visual?: AgencyImage | string | null
+  visualFit?: 'contain' | 'cover' | null
   intro?: string | null
   services?: AgencyService[] | string | null
   items?: AgencyStat[] | null
@@ -102,6 +107,7 @@ export interface AgencyBlock {
   mapUrl?: string | null
   showMap?: boolean | null
   animation?: string | null
+  theme?: SliceTheme | null
   image?: AgencyImage | string | null
   imageAlt?: string | null
   imagePosition?: 'left' | 'right' | null

@@ -12,6 +12,28 @@ const AgencyHero: Block = {
     { name: 'secondaryLabel', label: 'Κείμενο δεύτερου κουμπιού', type: 'text' },
     { name: 'secondaryUrl', label: 'Σύνδεσμος δεύτερου κουμπιού', type: 'text' },
     { name: 'note', label: 'Σύντομη σημείωση', type: 'text' },
+    {
+      name: 'visual',
+      label: 'Εικόνα ή animation',
+      type: 'upload',
+      relationTo: 'media',
+      admin: {
+        description: 'Εικόνα (JPG, PNG, WebP, SVG), GIF ή βίντεο MP4/WebM που παίζει αθόρυβα σε επανάληψη. Αν μείνει κενό, εμφανίζεται το προεπιλεγμένο γράφημα.',
+      },
+    },
+    {
+      name: 'visualFit',
+      label: 'Προσαρμογή εικόνας',
+      type: 'select',
+      defaultValue: 'contain',
+      options: [
+        { label: 'Ολόκληρη, χωρίς περικοπή', value: 'contain' },
+        { label: 'Γέμισμα πλαισίου με στρογγυλεμένες γωνίες', value: 'cover' },
+      ],
+      admin: {
+        condition: (_, siblingData) => Boolean(siblingData?.visual),
+      },
+    },
   ],
 }
 
@@ -283,7 +305,20 @@ const slices: Block[] = [
   ProjectDetailsSlice,
 ]
 
-const animationFields: Field[] = [
+const sharedFields: Field[] = [
+  {
+    name: 'theme',
+    label: 'Θέμα χρωμάτων',
+    type: 'select',
+    options: [
+      { label: 'Λευκό', value: 'light' },
+      { label: 'Εκρού', value: 'ecru' },
+      { label: 'Μαύρο', value: 'dark' },
+    ],
+    admin: {
+      description: 'Φόντο και χρώματα κειμένου της ενότητας. Αν μείνει κενό, χρησιμοποιείται το προεπιλεγμένο θέμα της ενότητας.',
+    },
+  },
   {
     name: 'animation',
     label: 'Κίνηση κατά την εμφάνιση',
@@ -302,5 +337,5 @@ const animationFields: Field[] = [
 
 export default slices.map(block => ({
   ...block,
-  fields: [...block.fields, ...animationFields],
+  fields: [...block.fields, ...sharedFields],
 }))

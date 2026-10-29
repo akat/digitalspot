@@ -26,6 +26,15 @@ const imageUrl = (image: AgencyImage | string | null | undefined) => {
 const imageAlt = (image: AgencyImage | string | null | undefined, fallback: string) =>
   typeof image === 'object' && image && image.alt ? image.alt : fallback
 
+const isVideo = (media: AgencyImage | string | null | undefined) =>
+  typeof media === 'object' && Boolean(media?.mimeType?.startsWith('video/'))
+
+// Hero videos autoplay; stop them for visitors who prefer reduced motion.
+const heroVideo = ref<HTMLVideoElement | null>(null)
+watch(heroVideo, (video) => {
+  if (video && window.matchMedia('(prefers-reduced-motion: reduce)').matches) video.pause()
+})
+
 const faqOpen = ref<number | null>(0)
 </script>
 
@@ -35,10 +44,10 @@ const faqOpen = ref<number | null>(0)
     <div class="agency-shell relative grid items-center gap-14 py-20 sm:py-28 lg:grid-cols-[1.05fr_.95fr] lg:py-32">
       <div class="max-w-2xl">
         <p v-if="slice.eyebrow" class="eyebrow"><span class="live-dot" />{{ slice.eyebrow }}</p>
-        <h1 class="mt-7 text-5xl font-semibold leading-[1.04] tracking-[-0.055em] text-slate-950 sm:text-6xl lg:text-7xl">
+        <h1 class="mt-7 text-5xl font-semibold leading-[1.04] tracking-[-0.055em] text-slice-fg sm:text-6xl lg:text-7xl">
           {{ slice.headline }}
         </h1>
-        <p v-if="slice.description" class="mt-7 max-w-xl text-lg leading-8 text-slate-600 sm:text-xl">
+        <p v-if="slice.description" class="mt-7 max-w-xl text-lg leading-8 text-slice-body sm:text-xl">
           {{ slice.description }}
         </p>
         <div class="mt-9 flex flex-wrap gap-3">
@@ -49,10 +58,24 @@ const faqOpen = ref<number | null>(0)
             {{ slice.secondaryLabel }}
           </NuxtLink>
         </div>
-        <p v-if="slice.note" class="mt-6 text-sm text-slate-500">{{ slice.note }}</p>
+        <p v-if="slice.note" class="mt-6 text-sm text-slice-subtle">{{ slice.note }}</p>
       </div>
 
-      <div class="hero-visual relative mx-auto w-full max-w-[540px]" aria-hidden="true">
+      <div v-if="imageUrl(slice.visual)" class="hero-media relative mx-auto w-full max-w-[540px]" :class="`hero-media-${slice.visualFit || 'contain'}`">
+        <video
+          v-if="isVideo(slice.visual)"
+          ref="heroVideo"
+          :src="imageUrl(slice.visual)"
+          :aria-label="imageAlt(slice.visual, '') || undefined"
+          role="img"
+          autoplay
+          muted
+          loop
+          playsinline
+        />
+        <img v-else :src="imageUrl(slice.visual)" :alt="imageAlt(slice.visual, '')" fetchpriority="high">
+      </div>
+      <div v-else class="hero-visual relative mx-auto w-full max-w-[540px]" aria-hidden="true">
         <div class="hero-orbit hero-orbit-one" />
         <div class="hero-orbit hero-orbit-two" />
         <div class="visual-card">
@@ -74,7 +97,7 @@ const faqOpen = ref<number | null>(0)
         <div class="floating-note"><span class="note-icon">✳</span><span><strong>Σκέψη με πρόθεση.</strong><br>Σχεδιασμός με αποτέλεσμα.</span></div>
       </div>
     </div>
-    <div class="agency-shell pb-8"><div class="flex flex-wrap items-center justify-between gap-5 border-t border-slate-200/80 pt-7"><p class="text-xs font-semibold uppercase tracking-[.18em] text-slate-400">Από την πρώτη ιδέα μέχρι την επόμενη μεγάλη κίνηση</p><a href="#services" class="text-sm font-semibold text-slate-700 transition hover:text-leaf">Ανακάλυψε τι μπορούμε να κάνουμε <span aria-hidden="true">↓</span></a></div></div>
+    <div class="agency-shell pb-8"><div class="flex flex-wrap items-center justify-between gap-5 border-t border-slice-line pt-7"><p class="text-xs font-semibold uppercase tracking-[.18em] text-slice-subtle">Από την πρώτη ιδέα μέχρι την επόμενη μεγάλη κίνηση</p><a href="#services" class="text-sm font-semibold text-slice-fg transition hover:opacity-70">Ανακάλυψε τι μπορούμε να κάνουμε <span aria-hidden="true">↓</span></a></div></div>
   </section>
 
   <section v-else-if="slice.blockType === 'servicesSlice'" id="services" class="agency-section agency-shell">
@@ -86,21 +109,21 @@ const faqOpen = ref<number | null>(0)
     <div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <article v-for="(service, index) in slice.services || []" :key="service.id ?? index" class="service-card">
         <span class="service-number">{{ service.number || `0${index + 1}` }}</span>
-        <h3 class="mt-12 text-xl font-semibold tracking-tight text-slate-900">{{ service.title }}</h3>
-        <p class="mt-3 text-sm leading-6 text-slate-600">{{ service.description }}</p>
-        <NuxtLink v-if="service.linkLabel && service.linkUrl" :to="service.linkUrl" class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-800 hover:text-leaf">
+        <h3 class="mt-12 text-xl font-semibold tracking-tight text-slice-fg">{{ service.title }}</h3>
+        <p class="mt-3 text-sm leading-6 text-slice-body">{{ service.description }}</p>
+        <NuxtLink v-if="service.linkLabel && service.linkUrl" :to="service.linkUrl" class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slice-fg hover:opacity-70">
           {{ service.linkLabel }} <span aria-hidden="true">↗</span>
         </NuxtLink>
       </article>
     </div>
   </section>
 
-  <section v-else-if="slice.blockType === 'statsSlice'" class="stats-section">
+  <section v-else-if="slice.blockType === 'statsSlice'">
     <div class="agency-shell grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-[1.2fr_repeat(3,1fr)]">
-      <p v-if="slice.intro" class="max-w-xs text-sm leading-6 text-white/70">{{ slice.intro }}</p>
-      <div v-for="(item, index) in slice.items || []" :key="item.id ?? index" class="border-l border-white/20 pl-5">
-        <p class="text-3xl font-semibold tracking-tight text-white">{{ item.value }}</p>
-        <p class="mt-1 text-sm text-white/65">{{ item.label }}</p>
+      <p v-if="slice.intro" class="max-w-xs text-sm leading-6 text-slice-body">{{ slice.intro }}</p>
+      <div v-for="(item, index) in slice.items || []" :key="item.id ?? index" class="border-l border-slice-line pl-5">
+        <p class="text-3xl font-semibold tracking-tight text-slice-fg">{{ item.value }}</p>
+        <p class="mt-1 text-sm text-slice-subtle">{{ item.label }}</p>
       </div>
     </div>
   </section>
@@ -112,7 +135,7 @@ const faqOpen = ref<number | null>(0)
         <h2 class="section-title">{{ slice.heading }}</h2>
         <p v-if="slice.description" class="section-lead">{{ slice.description }}</p>
       </div>
-      <NuxtLink to="/#contact" class="hidden shrink-0 text-sm font-semibold text-slate-800 hover:text-leaf sm:inline-flex">Έχεις ένα project; ↗</NuxtLink>
+      <NuxtLink to="/#contact" class="hidden shrink-0 text-sm font-semibold text-slice-fg hover:opacity-70 sm:inline-flex">Έχεις ένα project; ↗</NuxtLink>
     </div>
     <div class="mt-12 grid grid-cols-1 items-start gap-7 md:grid-cols-2">
       <article v-for="(project, index) in slice.projects || []" :key="project.id ?? index" class="project-card min-w-0">
@@ -123,15 +146,15 @@ const faqOpen = ref<number | null>(0)
             <span class="project-arrow" aria-hidden="true">↗</span>
           </div>
           <div class="mt-5 flex items-start justify-between gap-4">
-            <div><p class="text-xs font-semibold uppercase tracking-[.15em] text-slate-500">{{ project.category }}</p><h3 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{{ project.name }}</h3><p v-if="project.description" class="mt-2 max-w-lg text-sm leading-6 text-slate-600">{{ project.description }}</p></div>
-            <span class="mt-1 text-sm text-slate-400">0{{ index + 1 }}</span>
+            <div><p class="text-xs font-semibold uppercase tracking-[.15em] text-slice-subtle">{{ project.category }}</p><h3 class="mt-2 text-2xl font-semibold tracking-tight text-slice-fg">{{ project.name }}</h3><p v-if="project.description" class="mt-2 max-w-lg text-sm leading-6 text-slice-body">{{ project.description }}</p></div>
+            <span class="mt-1 text-sm text-slice-subtle">0{{ index + 1 }}</span>
           </div>
         </NuxtLink>
       </article>
     </div>
   </section>
 
-  <section v-else-if="slice.blockType === 'processSlice'" id="process" class="process-section">
+  <section v-else-if="slice.blockType === 'processSlice'" id="process">
     <div class="agency-shell py-20 sm:py-24">
       <div class="section-heading max-w-2xl">
         <p v-if="slice.eyebrow" class="eyebrow">{{ slice.eyebrow }}</p>
@@ -139,10 +162,10 @@ const faqOpen = ref<number | null>(0)
         <p v-if="slice.description" class="section-lead">{{ slice.description }}</p>
       </div>
       <ol class="mt-12 grid gap-8 md:grid-cols-4">
-        <li v-for="(step, index) in slice.steps || []" :key="step.id ?? index" class="border-t border-slate-300 pt-5">
-          <span class="text-sm font-semibold text-[#343839]">0{{ index + 1 }}</span>
-          <h3 class="mt-5 text-lg font-semibold text-slate-900">{{ step.title }}</h3>
-          <p class="mt-2 text-sm leading-6 text-slate-600">{{ step.description }}</p>
+        <li v-for="(step, index) in slice.steps || []" :key="step.id ?? index" class="border-t border-slice-line pt-5">
+          <span class="text-sm font-semibold text-slice-subtle">0{{ index + 1 }}</span>
+          <h3 class="mt-5 text-lg font-semibold text-slice-fg">{{ step.title }}</h3>
+          <p class="mt-2 text-sm leading-6 text-slice-body">{{ step.description }}</p>
         </li>
       </ol>
     </div>
@@ -153,13 +176,13 @@ const faqOpen = ref<number | null>(0)
       <p class="eyebrow">Συχνές ερωτήσεις</p>
       <h2 class="section-title">{{ slice.heading }}</h2>
     </div>
-    <div class="mt-9 max-w-3xl divide-y divide-slate-200 border-y border-slate-200">
-      <article v-for="(item, index) in slice.questions || []" :key="item.id ?? index" class="faq-item border-b border-slate-100 last:border-b-0">
-        <button type="button" class="flex w-full items-center justify-between gap-5 py-5 text-left text-base font-semibold text-slate-900" :aria-expanded="faqOpen === index" @click="faqOpen = faqOpen === index ? null : index">
+    <div class="mt-9 max-w-3xl divide-y divide-slice-line border-y border-slice-line">
+      <article v-for="(item, index) in slice.questions || []" :key="item.id ?? index" class="faq-item border-b border-slice-line last:border-b-0">
+        <button type="button" class="flex w-full items-center justify-between gap-5 py-5 text-left text-base font-semibold text-slice-fg" :aria-expanded="faqOpen === index" @click="faqOpen = faqOpen === index ? null : index">
           {{ item.question }}
           <span class="faq-plus" :class="{ 'rotate-45': faqOpen === index }" aria-hidden="true">+</span>
         </button>
-        <p v-if="faqOpen === index" class="max-w-2xl pb-5 text-sm leading-7 text-slate-600">{{ item.answer }}</p>
+        <p v-if="faqOpen === index" class="max-w-2xl pb-5 text-sm leading-7 text-slice-body">{{ item.answer }}</p>
       </article>
     </div>
   </section>
@@ -167,11 +190,11 @@ const faqOpen = ref<number | null>(0)
   <section v-else-if="slice.blockType === 'callToActionSlice'" class="cta-section">
     <div class="agency-shell flex flex-col gap-8 py-14 sm:flex-row sm:items-center sm:justify-between sm:py-16">
       <div class="max-w-2xl">
-        <p v-if="slice.eyebrow" class="text-xs font-semibold uppercase tracking-[.18em] text-white/60">{{ slice.eyebrow }}</p>
-        <h2 class="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{{ slice.heading }}</h2>
-        <p v-if="slice.description" class="mt-3 text-base leading-7 text-white/70">{{ slice.description }}</p>
+        <p v-if="slice.eyebrow" class="text-xs font-semibold uppercase tracking-[.18em] text-slice-subtle">{{ slice.eyebrow }}</p>
+        <h2 class="mt-3 text-3xl font-semibold tracking-tight text-slice-fg sm:text-4xl">{{ slice.heading }}</h2>
+        <p v-if="slice.description" class="mt-3 text-base leading-7 text-slice-body">{{ slice.description }}</p>
       </div>
-      <NuxtLink v-if="slice.buttonLabel" :to="slice.buttonUrl || '/#contact'" class="primary-button button-light shrink-0">
+      <NuxtLink v-if="slice.buttonLabel" :to="slice.buttonUrl || '/#contact'" class="primary-button shrink-0">
         {{ slice.buttonLabel }} <span aria-hidden="true">↗</span>
       </NuxtLink>
     </div>
@@ -184,7 +207,7 @@ const faqOpen = ref<number | null>(0)
         <h2 class="section-title max-w-2xl">{{ slice.heading }}</h2>
         <p v-if="slice.description" class="section-lead">{{ slice.description }}</p>
       </div>
-      <div class="grid gap-5 border-t border-slate-200 pt-6 sm:grid-cols-2">
+      <div class="grid gap-5 border-t border-slice-line pt-6 sm:grid-cols-2">
         <a v-if="slice.email" :href="`mailto:${slice.email}`" class="contact-link"><span>Email</span><strong>{{ slice.email }}</strong></a>
         <a v-if="slice.phone" :href="`tel:${slice.phone.replace(/\\s/g, '')}`" class="contact-link"><span>Τηλέφωνο</span><strong>{{ slice.phone }}</strong></a>
         <p v-if="slice.location" class="contact-link sm:col-span-2"><span>Τοποθεσία</span><strong>{{ slice.location }}</strong></p>
@@ -211,7 +234,7 @@ const faqOpen = ref<number | null>(0)
       <article v-for="(feature, index) in slice.features || []" :key="feature.id ?? index" class="feature-card">
         <span class="feature-symbol" aria-hidden="true">{{ feature.icon || `0${index + 1}` }}</span>
         <h3 class="mt-7 text-lg font-semibold">{{ feature.title }}</h3>
-        <p class="mt-2 text-sm leading-6 text-slate-600">{{ feature.description }}</p>
+        <p class="mt-2 text-sm leading-6 text-slice-body">{{ feature.description }}</p>
       </article>
     </div>
   </section>
@@ -253,13 +276,13 @@ const faqOpen = ref<number | null>(0)
     </div>
   </section>
 
-  <section v-else-if="slice.blockType === 'testimonialSlice'" class="testimonial-section">
+  <section v-else-if="slice.blockType === 'testimonialSlice'">
     <div class="agency-shell py-16 sm:py-20">
       <p v-if="slice.eyebrow" class="eyebrow">{{ slice.eyebrow }}</p>
       <figure class="mt-6 max-w-4xl">
         <blockquote class="testimonial-quote">«{{ slice.quote }}»</blockquote>
-        <figcaption class="mt-8 text-sm text-slate-600">
-          <strong class="text-slate-900">{{ slice.person }}</strong>
+        <figcaption class="mt-8 text-sm text-slice-body">
+          <strong class="text-slice-fg">{{ slice.person }}</strong>
           <span v-if="slice.role || slice.company"> · {{ [slice.role, slice.company].filter(Boolean).join(', ') }}</span>
         </figcaption>
       </figure>
@@ -267,7 +290,7 @@ const faqOpen = ref<number | null>(0)
   </section>
 
   <section v-else-if="slice.blockType === 'logoCloudSlice'" class="agency-section agency-shell">
-    <h2 v-if="slice.heading" class="text-center text-sm font-semibold uppercase tracking-[.16em] text-slate-500">{{ slice.heading }}</h2>
+    <h2 v-if="slice.heading" class="text-center text-sm font-semibold uppercase tracking-[.16em] text-slice-subtle">{{ slice.heading }}</h2>
     <ul class="mt-8 grid grid-cols-2 items-center gap-5 sm:grid-cols-3 lg:grid-cols-5">
       <li v-for="(logo, index) in slice.logos || []" :key="logo.id ?? index" class="logo-cloud-item">
         <img v-if="imageUrl(logo.image)" :src="imageUrl(logo.image)" :alt="logo.name || 'Λογότυπο συνεργάτη'" loading="lazy">
@@ -292,18 +315,18 @@ const faqOpen = ref<number | null>(0)
     <div v-if="slice.challenge || slice.solution" class="agency-shell project-story">
       <section v-if="slice.challenge">
         <p class="eyebrow">Η πρόκληση</p>
-        <p class="mt-4 text-lg leading-8 text-slate-700">{{ slice.challenge }}</p>
+        <p class="mt-4 text-lg leading-8 text-slice-body">{{ slice.challenge }}</p>
       </section>
       <section v-if="slice.solution">
         <p class="eyebrow">Η λύση</p>
-        <p class="mt-4 text-lg leading-8 text-slate-700">{{ slice.solution }}</p>
+        <p class="mt-4 text-lg leading-8 text-slice-body">{{ slice.solution }}</p>
       </section>
     </div>
-    <div v-if="slice.results?.length" class="stats-section">
+    <div v-if="slice.results?.length" class="slice-theme-dark">
       <div class="agency-shell grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
-        <div v-for="(result, index) in slice.results" :key="result.id ?? index" class="border-l border-white/20 pl-5">
-          <p class="text-3xl font-semibold text-white">{{ result.value }}</p>
-          <p class="mt-1 text-sm text-white/65">{{ result.label }}</p>
+        <div v-for="(result, index) in slice.results" :key="result.id ?? index" class="border-l border-slice-line pl-5">
+          <p class="text-3xl font-semibold text-slice-fg">{{ result.value }}</p>
+          <p class="mt-1 text-sm text-slice-subtle">{{ result.label }}</p>
         </div>
       </div>
     </div>

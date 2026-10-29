@@ -15,6 +15,84 @@
   scroll-behavior: smooth;
 }
 
+/* Slice themes. :root carries the light values so the header, footer and
+   anything outside a slice keep the default look. The lead form is always a
+   white card, so it keeps the light values in every theme. */
+:root,
+.slice-theme-light,
+.lead-form {
+  --slice-bg: #fafafa;
+  --slice-fg: #040707;
+  --slice-body: #626768;
+  --slice-subtle: #6f7374;
+  --slice-eyebrow: #343839;
+  --slice-line: #dedfdf;
+  --slice-card-bg: rgba(255, 255, 255, .65);
+  --slice-card-hover-bg: #fff;
+  --slice-card-border: #e4e5e5;
+  --slice-card-hover-border: #b5b8b8;
+  --slice-chip-bg: #ededed;
+  --slice-chip-fg: #343839;
+  --slice-button-bg: #040707;
+  --slice-button-fg: #fff;
+  --slice-button-hover-bg: #303536;
+  --slice-secondary-border: #dedfdf;
+  --slice-secondary-hover-bg: #fff;
+  --slice-glow: rgba(4, 7, 7, .07);
+  --slice-grid: rgba(4, 7, 7, .035);
+}
+
+.slice-theme-ecru {
+  --slice-bg: #f0f0ef;
+  --slice-fg: #040707;
+  --slice-body: #575b5c;
+  --slice-subtle: #626768;
+  --slice-eyebrow: #343839;
+  --slice-line: #d4d6d5;
+  --slice-card-bg: rgba(255, 255, 255, .7);
+  --slice-card-hover-bg: #fff;
+  --slice-card-border: #dcdddc;
+  --slice-card-hover-border: #a9adad;
+  --slice-chip-bg: #e2e3e1;
+  --slice-chip-fg: #343839;
+  --slice-button-bg: #040707;
+  --slice-button-fg: #fff;
+  --slice-button-hover-bg: #303536;
+  --slice-secondary-border: #c9cbca;
+  --slice-secondary-hover-bg: #fafafa;
+  --slice-glow: rgba(4, 7, 7, .06);
+  --slice-grid: rgba(4, 7, 7, .04);
+}
+
+.slice-theme-dark {
+  --slice-bg: #040707;
+  --slice-fg: #fff;
+  --slice-body: rgba(255, 255, 255, .72);
+  --slice-subtle: rgba(255, 255, 255, .6);
+  --slice-eyebrow: rgba(255, 255, 255, .78);
+  --slice-line: rgba(255, 255, 255, .18);
+  --slice-card-bg: rgba(255, 255, 255, .04);
+  --slice-card-hover-bg: rgba(255, 255, 255, .08);
+  --slice-card-border: rgba(255, 255, 255, .12);
+  --slice-card-hover-border: rgba(255, 255, 255, .3);
+  --slice-chip-bg: rgba(255, 255, 255, .1);
+  --slice-chip-fg: rgba(255, 255, 255, .85);
+  --slice-button-bg: #f3f3f3;
+  --slice-button-fg: #040707;
+  --slice-button-hover-bg: #fff;
+  --slice-secondary-border: rgba(255, 255, 255, .28);
+  --slice-secondary-hover-bg: rgba(255, 255, 255, .08);
+  --slice-glow: rgba(255, 255, 255, .1);
+  --slice-grid: rgba(255, 255, 255, .05);
+}
+
+.slice-theme-light,
+.slice-theme-ecru,
+.slice-theme-dark {
+  background-color: var(--slice-bg);
+  color: var(--slice-fg);
+}
+
 body {
   margin: 0;
   background: var(--brand-paper);
@@ -23,7 +101,7 @@ body {
 a:focus-visible,
 button:focus-visible,
 summary:focus-visible {
-  outline: 3px solid var(--brand-ink);
+  outline: 3px solid var(--slice-fg);
   outline-offset: 3px;
 }
 
@@ -62,42 +140,31 @@ summary:focus-visible {
 
 .header-cta,
 .primary-button {
-  background: var(--brand-ink);
-  color: #fff;
+  background: var(--slice-button-bg);
+  color: var(--slice-button-fg);
 }
 
 .header-cta:hover,
 .primary-button:hover {
-  background: #303536;
+  background: var(--slice-button-hover-bg);
   transform: translateY(-1px);
 }
 
 .secondary-button {
-  border: 1px solid var(--brand-line);
-  color: var(--brand-ink);
+  border: 1px solid var(--slice-secondary-border);
+  color: var(--slice-fg);
 }
 
 .secondary-button:hover {
-  background: #fff;
-}
-
-.button-light {
-  background: #f3f3f3;
-  color: var(--brand-ink);
-}
-
-.button-light:hover {
-  background: #fff;
+  background: var(--slice-secondary-hover-bg);
 }
 
 .hero-section {
-  background:
-    radial-gradient(ellipse at 87% 22%, rgba(4, 7, 7, .07), transparent 30%),
-    var(--brand-paper);
+  background: radial-gradient(ellipse at 87% 22%, var(--slice-glow), transparent 30%);
 }
 
 .hero-grid {
-  background-image: linear-gradient(rgba(4, 7, 7, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(4, 7, 7, .035) 1px, transparent 1px);
+  background-image: linear-gradient(var(--slice-grid) 1px, transparent 1px), linear-gradient(90deg, var(--slice-grid) 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: linear-gradient(to bottom, black, transparent 85%);
 }
@@ -106,7 +173,7 @@ summary:focus-visible {
   display: flex;
   align-items: center;
   gap: .55rem;
-  color: #343839;
+  color: var(--slice-eyebrow);
   font-size: .72rem;
   font-weight: 700;
   letter-spacing: .16em;
@@ -118,8 +185,8 @@ summary:focus-visible {
   width: .48rem;
   height: .48rem;
   border-radius: 50%;
-  background: var(--brand-ink);
-  box-shadow: 0 0 0 4px rgba(4, 7, 7, .12);
+  background: var(--slice-fg);
+  box-shadow: 0 0 0 4px var(--slice-line);
 }
 
 .hero-visual {
@@ -128,10 +195,30 @@ summary:focus-visible {
   place-items: center;
 }
 
+.hero-media img,
+.hero-media video {
+  display: block;
+  width: 100%;
+}
+
+.hero-media-contain img,
+.hero-media-contain video {
+  max-height: 560px;
+  object-fit: contain;
+}
+
+.hero-media-cover img,
+.hero-media-cover video {
+  aspect-ratio: 1.06;
+  border-radius: 1.4rem;
+  object-fit: cover;
+  box-shadow: 0 30px 90px rgba(4, 7, 7, .12);
+}
+
 .hero-orbit {
   position: absolute;
   aspect-ratio: 1;
-  border: 1px solid rgba(4, 7, 7, .12);
+  border: 1px solid var(--slice-line);
   border-radius: 50%;
 }
 
@@ -208,7 +295,7 @@ summary:focus-visible {
 
 .section-title {
   margin-top: .8rem;
-  color: var(--brand-ink);
+  color: var(--slice-fg);
   font-size: clamp(2.1rem, 4vw, 3.35rem);
   font-weight: 600;
   letter-spacing: -.055em;
@@ -218,35 +305,31 @@ summary:focus-visible {
 .section-lead {
   margin-top: 1.1rem;
   max-width: 620px;
-  color: #626768;
+  color: var(--slice-body);
   font-size: 1.05rem;
   line-height: 1.8;
 }
 
 .service-card {
   min-height: 275px;
-  border: 1px solid #e4e5e5;
+  border: 1px solid var(--slice-card-border);
   border-radius: 1.1rem;
-  background: rgba(255, 255, 255, .65);
+  background: var(--slice-card-bg);
   padding: 1.5rem;
   transition: border-color .2s ease, background-color .2s ease, transform .2s ease;
 }
 
 .service-card:hover {
   transform: translateY(-4px);
-  border-color: #b5b8b8;
-  background: #fff;
+  border-color: var(--slice-card-hover-border);
+  background: var(--slice-card-hover-bg);
 }
 
 .service-number {
-  color: #464a4b;
+  color: var(--slice-subtle);
   font-size: .75rem;
   font-weight: 700;
   letter-spacing: .12em;
-}
-
-.stats-section {
-  background: var(--brand-ink);
 }
 
 .project-image {
@@ -315,38 +398,32 @@ summary:focus-visible {
   transform: translateY(0);
 }
 
-.process-section {
-  background: #f0f0ef;
-}
-
 .faq-plus {
-  color: #464a4b;
+  color: var(--slice-subtle);
   font-size: 1.35rem;
   transition: transform .2s ease;
 }
 
 .cta-section {
-  background:
-    radial-gradient(ellipse at 84% 10%, rgba(255, 255, 255, .1), transparent 35%),
-    var(--brand-ink);
+  background: radial-gradient(ellipse at 84% 10%, var(--slice-glow), transparent 35%);
 }
 
 .contact-link {
   display: flex;
   flex-direction: column;
   gap: .45rem;
-  color: #626768;
+  color: var(--slice-subtle);
   font-size: .8rem;
 }
 
 .contact-link strong {
-  color: var(--brand-ink);
+  color: var(--slice-fg);
   font-size: 1rem;
   font-weight: 600;
 }
 
 .contact-link[href]:hover strong {
-  color: #343839;
+  opacity: .75;
 }
 
 .lead-form {
@@ -435,9 +512,9 @@ summary:focus-visible {
 
 .feature-card {
   min-height: 210px;
-  border: 1px solid var(--brand-line);
+  border: 1px solid var(--slice-card-border);
   border-radius: 1.1rem;
-  background: rgba(255, 255, 255, .65);
+  background: var(--slice-card-bg);
   padding: 1.5rem;
 }
 
@@ -447,9 +524,9 @@ summary:focus-visible {
   height: 2.5rem;
   place-items: center;
   border-radius: .75rem;
-  background: #ededed;
+  background: var(--slice-chip-bg);
   padding-inline: .5rem;
-  color: #343839;
+  color: var(--slice-chip-fg);
   font-size: .75rem;
   font-weight: 700;
 }
@@ -478,12 +555,8 @@ summary:focus-visible {
   letter-spacing: -.1em;
 }
 
-.testimonial-section {
-  background: #f0f0ef;
-}
-
 .testimonial-quote {
-  color: var(--brand-ink);
+  color: var(--slice-fg);
   font-size: clamp(1.7rem, 4vw, 3rem);
   font-weight: 500;
   letter-spacing: -.045em;
@@ -494,11 +567,11 @@ summary:focus-visible {
   display: grid;
   min-height: 5rem;
   place-items: center;
-  border: 1px solid #e8e9e9;
+  border: 1px solid var(--slice-card-border);
   border-radius: .9rem;
-  background: rgba(255, 255, 255, .7);
+  background: var(--slice-card-bg);
   padding: 1rem;
-  color: #55595a;
+  color: var(--slice-body);
   font-size: .9rem;
   font-weight: 600;
   text-align: center;
@@ -517,7 +590,7 @@ summary:focus-visible {
 .project-detail-title {
   max-width: 900px;
   margin-top: 1rem;
-  color: var(--brand-ink);
+  color: var(--slice-fg);
   font-size: clamp(2.8rem, 7vw, 5.5rem);
   font-weight: 600;
   letter-spacing: -.06em;
@@ -527,7 +600,7 @@ summary:focus-visible {
 .project-detail-lead {
   max-width: 700px;
   margin-top: 1.5rem;
-  color: #626768;
+  color: var(--slice-body);
   font-size: 1.15rem;
   line-height: 1.8;
 }
@@ -540,7 +613,7 @@ summary:focus-visible {
 }
 
 .project-meta dt {
-  color: #747879;
+  color: var(--slice-subtle);
   font-size: .7rem;
   font-weight: 700;
   letter-spacing: .12em;
@@ -549,7 +622,7 @@ summary:focus-visible {
 
 .project-meta dd {
   margin-top: .4rem;
-  color: var(--brand-ink);
+  color: var(--slice-fg);
   font-size: .9rem;
   font-weight: 600;
 }
@@ -593,7 +666,7 @@ summary:focus-visible {
 
 .project-gallery figcaption {
   margin-top: .7rem;
-  color: #626768;
+  color: var(--slice-body);
   font-size: .85rem;
 }
 
@@ -608,14 +681,14 @@ summary:focus-visible {
   display: grid;
   align-items: center;
   gap: .8rem 1.25rem;
-  border: 1px solid #e1e3e3;
+  border: 1px solid var(--slice-card-border);
   border-radius: 1rem;
-  background: #fff;
+  background: var(--slice-card-bg);
   padding: 1.1rem 1.25rem;
 }
 
 .project-layer-number {
-  color: #777c7d;
+  color: var(--slice-subtle);
   font-size: .72rem;
   font-weight: 700;
   letter-spacing: .12em;
@@ -634,9 +707,9 @@ summary:focus-visible {
 
 .project-layer ul li {
   border-radius: 999px;
-  background: #f0f0ef;
+  background: var(--slice-chip-bg);
   padding: .4rem .65rem;
-  color: #55595a;
+  color: var(--slice-chip-fg);
   font-size: .75rem;
 }
 

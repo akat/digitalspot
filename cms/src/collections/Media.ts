@@ -6,7 +6,7 @@ const Media: CollectionConfig = {
   upload: {
     staticURL: '/media',
     staticDir: 'media',
-    mimeTypes: ['image/*'],
+    mimeTypes: ['image/*', 'video/mp4', 'video/webm'],
   },
   access: { read: () => true },
   fields: [

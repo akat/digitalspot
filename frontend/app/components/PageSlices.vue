@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import type { AgencyBlock } from '~/types/content'
+import type { AgencyBlock, SliceTheme } from '~/types/content'
+
+// Slices without an explicit theme keep the background they were designed with.
+const defaultThemes: Record<string, SliceTheme> = {
+  statsSlice: 'dark',
+  callToActionSlice: 'dark',
+  processSlice: 'ecru',
+  testimonialSlice: 'ecru',
+}
+
+const themeClass = (slice: AgencyBlock) =>
+  `slice-theme-${slice.theme || defaultThemes[slice.blockType] || 'light'}`
 
 const animationClass = (animation?: string | null) =>
   animation && animation !== 'none' ? `slice-animation-${animation}` : ''
@@ -34,7 +45,7 @@ defineProps<{
 <template>
   <div ref="sliceContainer">
     <template v-for="(slice, index) in blocks" :key="slice.id ?? `${slice.blockType}-${index}`">
-      <div :class="animationClass(slice.animation)" :data-slice-animation="animationClass(slice.animation) || undefined">
+      <div :class="[themeClass(slice), animationClass(slice.animation)]" :data-slice-animation="animationClass(slice.animation) || undefined">
         <AgencySlice :slice="slice" />
       </div>
     </template>
