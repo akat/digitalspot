@@ -124,6 +124,7 @@ export interface AgencyPage {
   id: string | number
   title: string
   slug: string
+  _status?: 'draft' | 'published' | null
   blocks?: AgencyBlock[]
   seo?: {
     metaTitle?: string | null

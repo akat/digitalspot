@@ -12,6 +12,8 @@ if (error.value) {
   })
 }
 
+useLivePreview(page)
+
 useHead(() => ({
   title: page.value?.seo?.metaTitle || 'Digital Spot — Ψηφιακή στρατηγική & δημιουργία',
   meta: [

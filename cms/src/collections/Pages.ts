@@ -1,16 +1,40 @@
 import type { CollectionConfig } from 'payload/types'
 
 import AgencySlices from '../blocks'
+import { buildPreviewURL } from '../preview'
 
 const Pages: CollectionConfig = {
   slug: 'pages',
   labels: { singular: 'Σελίδα', plural: 'Σελίδες' },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'slug', 'updatedAt'],
+    defaultColumns: ['title', 'slug', '_status', 'updatedAt'],
+    preview: (doc, { token }) => buildPreviewURL(doc.slug, token),
+    livePreview: {
+      url: ({ data }) => buildPreviewURL(data.slug),
+      breakpoints: [
+        { label: 'Κινητό', name: 'mobile', width: 375, height: 667 },
+        { label: 'Tablet', name: 'tablet', width: 768, height: 1024 },
+        { label: 'Desktop', name: 'desktop', width: 1440, height: 900 },
+      ],
+    },
+  },
+  versions: {
+    drafts: true,
+    maxPerDoc: 50,
   },
   access: {
-    read: () => true,
+    // Visitors only see published pages; signed-in editors also see drafts.
+    // Pages created before drafts were enabled have no _status and count as published.
+    read: ({ req: { user } }) => {
+      if (user) return true
+      return {
+        or: [
+          { _status: { equals: 'published' } },
+          { _status: { exists: false } },
+        ],
+      }
+    },
   },
   fields: [
     { name: 'title', label: 'Τίτλος', type: 'text', required: true },

@@ -52,29 +52,21 @@ const seed = async () => {
     local: true,
   })
 
-  const existingUser = await payload.find({
-    collection: 'users',
-    where: { email: { equals: email } },
-    limit: 1,
-  })
-
-  if (!existingUser.docs.length) {
-    await payload.create({
-      collection: 'users',
-      data: {
-        email,
-        password,
-        firstName: 'Διαχειριστής',
-        lastName: 'Ιστοσελίδας',
-      },
-    })
+  // Seed only an empty database, so later runs never touch content edited in the admin.
+  const existingUsers = await payload.find({ collection: 'users', limit: 1, depth: 0 })
+  if (existingUsers.docs.length) {
+    console.log('Το CMS έχει ήδη αρχικοποιηθεί· το seed παραλείπεται.')
+    process.exit(0)
   }
 
-  const existingPage = await payload.find({
-    collection: 'pages',
-    where: { slug: { equals: 'home' } },
-    limit: 1,
-    depth: 0,
+  await payload.create({
+    collection: 'users',
+    data: {
+      email,
+      password,
+      firstName: 'Διαχειριστής',
+      lastName: 'Ιστοσελίδας',
+    },
   })
 
   const homePageContent = {
@@ -169,27 +161,13 @@ const seed = async () => {
     ],
   }
 
-  if (!existingPage.docs.length) {
-    await payload.create({
-      collection: 'pages',
-      data: homePageContent,
-    })
-  } else if (
-    existingPage.docs[0]
-    && (!Array.isArray(existingPage.docs[0].blocks) || existingPage.docs[0].blocks.length === 0)
-  ) {
-    await payload.update({
-      collection: 'pages',
-      id: existingPage.docs[0].id,
-      data: { blocks: homePageContent.blocks },
-    })
-  }
+  await payload.create({
+    collection: 'pages',
+    data: { ...homePageContent, _status: 'published' },
+  })
 
   const mainNavigation = await payload.findGlobal({ slug: 'main-navigation', depth: 0 }) as MainNavigationSettings
   const navigationItems = mainNavigation.mainNavigation || []
-  const servicesMenuItem = navigationItems.find(
-    item => item.label.trim().toLocaleLowerCase('el') === 'υπηρεσίες',
-  )
 
   if (!navigationItems.length) {
     await payload.updateGlobal({
@@ -213,23 +191,6 @@ const seed = async () => {
           label: mainNavigation.headerCta?.label || 'Ας μιλήσουμε',
           url: mainNavigation.headerCta?.url || '/#contact',
         },
-      },
-    })
-  } else if (servicesMenuItem && !servicesMenuItem.children?.length) {
-    await payload.updateGlobal({
-      slug: 'main-navigation',
-      data: {
-        mainNavigation: navigationItems.map(item => item === servicesMenuItem
-          ? {
-              ...item,
-              children: [
-                { label: 'Εφαρμογές για κινητά', url: '/#services' },
-                { label: 'Ιστοσελίδες', url: '/#services' },
-                { label: 'Ηλεκτρονικά καταστήματα', url: '/#services' },
-                { label: 'Εξατομικευμένες πλατφόρμες', url: '/#services' },
-              ],
-            }
-          : item),
       },
     })
   }
@@ -280,11 +241,6 @@ const seed = async () => {
         copyright: footerSettings.copyright || 'Digital Spot. Με φροντίδα, στην Ελλάδα.',
       },
     })
-  } else if (footerSettings.copyright === 'Στίγμα Studio. Με φροντίδα, στην Ελλάδα.') {
-    await payload.updateGlobal({
-      slug: 'footer-settings',
-      data: { copyright: 'Digital Spot. Με φροντίδα, στην Ελλάδα.' },
-    })
   }
 
   const sliceExamples = await payload.find({
@@ -297,6 +253,7 @@ const seed = async () => {
     await payload.create({
       collection: 'pages',
       data: {
+        _status: 'published',
         title: 'Παραδείγματα ενοτήτων',
         slug: 'paradeigmata-slices',
         seo: {
@@ -441,29 +398,6 @@ const seed = async () => {
         ],
       },
     })
-  } else {
-    const examplePage = sliceExamples.docs[0]
-    const storedBlocks = Array.isArray(examplePage?.blocks) ? examplePage.blocks : []
-    const hasContactMap = storedBlocks.some(
-      block => block.blockType === 'contactSlice' && block.showMap === true && Boolean(block.mapUrl),
-    )
-    const exampleBlocks = storedBlocks.map(block => block.blockType === 'contactSlice'
-        ? {
-            ...block,
-            showMap: true,
-            mapUrl: 'https://maps.google.com/maps?q=Athens%2C%20Greece&output=embed',
-          }
-        : block)
-    const hasProjectStack = exampleBlocks.some(block => block.blockType === 'projectStackSlice')
-    if (examplePage && (!hasProjectStack || !hasContactMap)) {
-      await payload.update({
-        collection: 'pages',
-        id: examplePage.id,
-        data: {
-          blocks: hasProjectStack ? exampleBlocks : [...exampleBlocks, projectStackExample],
-        },
-      })
-    }
   }
 
   const projectPage = await payload.find({
@@ -476,6 +410,7 @@ const seed = async () => {
     await payload.create({
       collection: 'pages',
       data: {
+        _status: 'published',
         title: 'Μελέτη έργου: Ψηφιακή παρουσία',
         slug: 'project-paradeigma',
         seo: {
@@ -517,24 +452,6 @@ const seed = async () => {
             buttonUrl: '/#contact',
           },
         ],
-      },
-    })
-  }
-
-  const existingSeo = existingPage.docs[0]?.seo
-  const hasOldSeoTitle = existingSeo
-    && typeof existingSeo === 'object'
-    && 'metaTitle' in existingSeo
-    && existingSeo.metaTitle === 'Στίγμα Studio — Ψηφιακή στρατηγική & δημιουργία'
-
-  if (hasOldSeoTitle && existingPage.docs[0]) {
-    await payload.update({
-      collection: 'pages',
-      id: existingPage.docs[0].id,
-      data: {
-        seo: {
-          metaTitle: 'Digital Spot — Ψηφιακή στρατηγική & δημιουργία',
-        },
       },
     })
   }

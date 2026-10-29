@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+
 const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
 export default defineNuxtConfig({
@@ -5,6 +7,10 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   modules: ['@nuxtjs/tailwindcss'],
   css: ['~/assets/css/main.css'],
+  alias: {
+    // The package ships `"exports": null`, which Vite refuses to resolve.
+    '@payloadcms/live-preview': fileURLToPath(new URL('./node_modules/@payloadcms/live-preview/dist/index.js', import.meta.url)),
+  },
   ssr: true,
   app: {
     head: {

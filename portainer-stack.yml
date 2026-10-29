@@ -62,6 +62,7 @@ services:
       PORT: 3055
       PAYLOAD_SECRET: ${PAYLOAD_SECRET:?Set PAYLOAD_SECRET}
       PAYLOAD_PUBLIC_SERVER_URL: https://payload.digitalspot.gr
+      PAYLOAD_SITE_URL: https://www.digitalspot.gr
       PAYLOAD_ADMIN_EMAIL: ${PAYLOAD_ADMIN_EMAIL:?Set PAYLOAD_ADMIN_EMAIL}
       PAYLOAD_ADMIN_PASSWORD: ${PAYLOAD_ADMIN_PASSWORD:?Set PAYLOAD_ADMIN_PASSWORD}
       DATABASE_URI: mongodb://digitalspot-mongo:27017/digitalspot

@@ -35,8 +35,21 @@ if (process.env.S3_PUBLIC_BASE_URL) {
     `${process.env.S3_PUBLIC_BASE_URL!.replace(/\/$/, '')}/${filename}`
 }
 
+const siteURL = (process.env.PAYLOAD_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '')
+
 export default buildConfig({
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL,
+  // The live preview running on the site fetches related docs (e.g. media) from the API.
+  cors: [siteURL],
+  endpoints: [
+    {
+      path: '/preview-config',
+      method: 'get',
+      handler: (_request, response) => {
+        response.json({ siteURL })
+      },
+    },
+  ],
   editor: lexicalEditor({}),
   admin: {
     user: Users.slug,

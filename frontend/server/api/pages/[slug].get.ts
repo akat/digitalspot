@@ -1,4 +1,4 @@
-import { createError, defineEventHandler, getRouterParam } from 'h3'
+import { createError, defineEventHandler, getRouterParam, setResponseHeader } from 'h3'
 import type { AgencyPage } from '~/types/content'
 
 export default defineEventHandler(async (event) => {
@@ -13,11 +13,18 @@ export default defineEventHandler(async (event) => {
   payloadURL.searchParams.set('limit', '1')
   payloadURL.searchParams.set('depth', '2')
 
+  const headers: Record<string, string> = { Accept: 'application/json' }
+  const previewToken = getPreviewToken(event)
+  if (previewToken) {
+    // Editors in preview mode get the latest draft instead of the published version.
+    payloadURL.searchParams.set('draft', 'true')
+    headers.Authorization = `JWT ${previewToken}`
+    setResponseHeader(event, 'Cache-Control', 'private, no-store')
+  }
+
   let response: { docs?: AgencyPage[] }
   try {
-    response = await $fetch<{ docs?: AgencyPage[] }>(payloadURL.toString(), {
-      headers: { Accept: 'application/json' },
-    })
+    response = await $fetch<{ docs?: AgencyPage[] }>(payloadURL.toString(), { headers })
   } catch (error) {
     console.error(`Αποτυχία φόρτωσης της σελίδας "${slug}" από το Payload.`, error)
     throw createError({ statusCode: 502, message: 'Δεν ήταν δυνατή η φόρτωση της σελίδας.' })

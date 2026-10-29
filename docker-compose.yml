@@ -79,6 +79,7 @@ services:
       PORT: 3055
       PAYLOAD_SECRET: ${PAYLOAD_SECRET:-replace-this-with-a-long-random-secret}
       PAYLOAD_PUBLIC_SERVER_URL: ${NUXT_PUBLIC_PAYLOAD_URL:-http://localhost:3055}
+      PAYLOAD_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost:3000}
       DATABASE_URI: mongodb://mongo:27017/digitalspot
       PAYLOAD_ADMIN_EMAIL: ${PAYLOAD_ADMIN_EMAIL:-admin@stigma.studio}
       PAYLOAD_ADMIN_PASSWORD: ${PAYLOAD_ADMIN_PASSWORD:-change-this-password}

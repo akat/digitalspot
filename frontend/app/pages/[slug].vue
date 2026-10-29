@@ -14,6 +14,8 @@ if (error.value) {
   })
 }
 
+useLivePreview(page)
+
 useHead(() => ({
   title: page.value?.seo?.metaTitle || `${page.value?.title || 'Σελίδα'} | Digital Spot`,
   meta: [
