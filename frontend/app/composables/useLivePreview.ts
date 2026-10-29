@@ -16,7 +16,9 @@ export const useLivePreview = <T extends object>(page: Ref<T | null | undefined>
       depth: 2,
       initialData: (page.value ?? {}) as T,
       callback: (data) => {
-        page.value = data
+        // The SDK mutates nested objects in place; a fresh copy lets the
+        // shallow `useFetch` ref and the block components see the change.
+        page.value = structuredClone(data)
       },
     })
     stop = () => unsubscribe(listener)
